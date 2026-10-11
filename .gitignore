@@ -1,0 +1,21 @@
+# MATLAB
+*.asv
+*.m~
+*.mex*
+*.slxc
+*.autosave
+octave-workspace
+*.mat
+
+# Office temp/lock files
+~$*.doc*
+~$*.xls*
+~$*.ppt*
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Editor
+.vscode/
+*.code-workspace
