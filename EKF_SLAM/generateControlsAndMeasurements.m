@@ -1,6 +1,7 @@
 clc;
 clear all;
 close all;
+addpath(fullfile(fileparts(mfilename('fullpath')), '..', 'common'));
 
 % Robot parameters
 robotPose = [0,0.2,0];

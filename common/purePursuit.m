@@ -97,4 +97,3 @@ end
 function [dist] = distToGoalPoint(cp, gp)
     dist = sqrt((cp(1) - gp(1))^2 + (cp(2) - gp(2))^2);
 end
-

@@ -1,6 +1,7 @@
 clc;
 clear all;
 close all;
+addpath(fullfile(fileparts(mfilename('fullpath')), '..', 'common'));
 
 % ------------------------------------------------------------------
 % Environment: ground-truth landmark positions and path waypoints
@@ -21,9 +22,16 @@ goalPoints = [0,0; 2,0; 2,2; 1,1; 2,0];
 v_mps = 0.5;
 robotRadius_m = 0.25;
 
-% Odometry/measurement noise std devs (must match getControlAndMeasurement)
-sigma_v = 0.02; sigma_w = deg2rad(1);
-sigma_r = 0.05; sigma_b = deg2rad(2);
+% ------------------------------------------------------------------
+% Simulation parameters shared with getControlAndMeasurement
+% ------------------------------------------------------------------
+simParams.landmarks = landmarks;
+simParams.model     = 'icr';         % kinematic model: 'icr' or 'simple'
+simParams.dt_s      = 0.1;           % time between iterations (s)
+simParams.sigma_v   = 0.02;          % linear velocity noise std dev (m/s)
+simParams.sigma_w   = deg2rad(1);    % angular velocity noise std dev (rad/s)
+simParams.sigma_r   = 0.05;          % range measurement noise std dev (m)
+simParams.sigma_b   = deg2rad(2);    % bearing measurement noise std dev (rad)
 
 % ------------------------------------------------------------------
 % SLAM parameters
@@ -45,7 +53,7 @@ for ii = 1:numLandmarks
     P(jx:jx+1, jx:jx+1) = eye(2)*largeInitialVariance;
 end
 observedLandmarks = false(numLandmarks, 1);
-Q = diag([sigma_r^2, sigma_b^2]);
+Q = diag([simParams.sigma_r^2, simParams.sigma_b^2]);
 
 % ------------------------------------------------------------------
 % Simulation loop
@@ -59,12 +67,12 @@ while(~atFinalGoal)
     estimatedPose = x(1:3)';
 
     % Simulate one iteration of motion + sensing (known data association)
-    [u, z, truePose, correspondence] = getControlAndMeasurement(estimatedPose, v_mps, lastGoal, currentGoal, landmarks);
+    [u, z, truePose, correspondence] = getControlAndMeasurement(estimatedPose, v_mps, lastGoal, currentGoal, simParams);
 
 
 
 
-    
+
 
     
     % ---------------- Goal management ----------------
