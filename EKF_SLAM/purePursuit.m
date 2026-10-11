@@ -1,6 +1,10 @@
 function [w_radps, gp] = purePursuit(currentPose, lineSegBeginPoint, lineSegEndPoint, v_mps)
-%PUREPURSUIT Summary of this function goes here
-%   Detailed explanation goes here
+%PUREPURSUIT Compute steering command to follow a line segment
+%   Uses the pure pursuit algorithm to steer a robot at pose currentPose
+%   [x,y,theta] toward a lookahead goal point along the line segment from
+%   lineSegBeginPoint to lineSegEndPoint. Returns the angular velocity
+%   w_radps needed to reach the goal point gp while traveling at v_mps.
+
     lookaheadDist_m = 1;
     
     % Compute cross track error

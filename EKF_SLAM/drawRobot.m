@@ -1,4 +1,9 @@
 function drawRobot(x, y, theta, radius, color)
+%DRAWROBOT Draw a circular robot with a heading arrow
+%   Draws a circle of the given radius centered at (x,y) with an
+%   orientation arrow pointing in the direction theta (degrees). If color
+%   is omitted, default colors are used (blue circle, red arrow). Pass
+%   'gray' for a dimmed rendering, or any other MATLAB color spec.
 
     theta = theta - 90;
     % Get points for circle
