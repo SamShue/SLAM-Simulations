@@ -1,20 +1,12 @@
 # 1D GraphSLAM Example
 
+This example continues the [Introduction to GraphSLAM](graphslam_introduction.md). It assumes you have read that document, which explains what GraphSLAM is and why it works.
+
 ## Introduction
 
-GraphSLAM is a graph-based approach to **simultaneous localization and mapping (SLAM)**. It estimates both the robot's poses over time and the positions of landmarks in the environment. Each pose and landmark is represented as a node in a graph, while sensor observations and motion measurements become constraints, or edges, between those nodes.
+The introduction described GraphSLAM in general terms: poses and landmarks are nodes in a graph, measurements are edges between them, and the best estimate of everything is found at once by solving $\Omega\mu=\xi$. This document turns that description into equations and numbers.
 
-![A GraphSLAM graph with triangular robot poses connected by a solid trajectory and star-shaped landmarks connected to poses by dashed observation constraints.](images/graphslam-pose-landmark-graph.png)
-
-*Image source: [A Brief Introduction to GraphSLAM](https://shivachandrachary.medium.com/a-brief-introduction-to-graphslam-4204b4fce2f0) by shivachandrachary on Medium.*
-
-In this example graph, the triangles labeled $x_0$ through $x_{18}$ are robot poses at different times, and the stars labeled $m_1$ through $m_5$ are mapped landmarks. Solid edges connect successive poses through motion constraints, while dashed edges show landmark observations. Because observations can connect distant parts of the trajectory through the same landmark, the graph captures information that can correct accumulated drift.
-
-Together, these constraints provide a complete SLAM solution: the robot trajectory and the map are solved as one connected estimation problem. Odometry relates successive poses, landmark observations relate poses to landmarks, and repeated observations create the redundancy needed to detect inconsistent measurements and distribute error across the trajectory.
-
-GraphSLAM is typically an **offline, batch solver**. Rather than estimating only the current pose from the previous estimate, it considers all poses and measurements collected over the entire time history at once. When a later observation reveals that an earlier pose or landmark estimate was inaccurate, the solution can adjust the earlier poses, later poses, and landmarks together. This global optimization generally produces a more consistent map and trajectory, at the cost of storing and solving a larger system.
-
-This example introduces those ideas in one dimension, where the equations can be written explicitly and the information matrix can be inspected directly. The same graph structure extends to practical two- and three-dimensional SLAM systems, where the constraints are usually nonlinear and are solved through repeated linearization and optimization. The [2D GraphSLAM Example](graphslam_2d_example.md) continues from here and shows how poses with a heading change the matrices.
+We do it in one dimension. Every pose and every landmark is a single number, so the equations can be written explicitly and the information matrix can be inspected directly. The same graph structure extends to practical two- and three-dimensional SLAM systems, where the constraints are usually nonlinear and are solved through repeated linearization and optimization. The [2D GraphSLAM Example](graphslam_2d_example.md) continues from here and shows how poses with a heading change the matrices.
 
 ---
 
