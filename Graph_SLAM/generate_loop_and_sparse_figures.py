@@ -502,6 +502,32 @@ def print_numbers(mu0):
         print(r)
 
 
+def assert_bearing_side_note(mu0):
+    """Numbers quoted in the 'would measuring bearing help?' side note of graphslam_loop_closure.md."""
+    base = len(M.MEASUREMENTS)
+
+    def x8_error(extra, reweight=1.0):
+        saved = list(M.MEASUREMENTS)
+        try:
+            k = M.LANDMARK_CLOSURE
+            kind, i, j, z, w = M.MEASUREMENTS[k]
+            M.MEASUREMENTS[k] = (kind, i, j, z, w * reweight)
+            M.MEASUREMENTS.extend(extra)
+            ids = M.LOCAL + [k] + list(range(base, base + len(extra)))
+            return M.pose_errors(M.solve(mu0, ids)[-1])[0][8]
+        finally:
+            M.MEASUREMENTS[:] = saved
+
+    z = M.MEASUREMENTS[M.LANDMARK_CLOSURE][3]
+    assert abs(np.hypot(*z) - 2.50) < 0.005 and abs(np.degrees(np.arctan2(z[1], z[0])) - 37.7) < 0.05
+    assert abs(x8_error([]) - 0.51) < 0.005
+    assert abs(x8_error([], reweight=100.0) - 0.52) < 0.005
+    z1 = M.rot(M.TRUE_POSES[8][2]).T @ (M.TRUE_LM[1] - M.TRUE_POSES[8][:2]) + np.array([0.02, -0.02])
+    assert abs(x8_error([("lm", 8, 1, z1, M.W_LM)]) - 0.45) < 0.005
+    compass = ("prior", 8, None, np.array([0.0, 0.0, 0.01]), np.diag([0.0, 0.0, 1 / 0.05 ** 2]))
+    assert abs(x8_error([compass]) - 0.15) < 0.005
+
+
 def main():
     os.makedirs(OUT_DIR, exist_ok=True)
     mu0 = M.initial_guess()
@@ -550,6 +576,7 @@ def main():
     assert list(np.round(M.pose_errors(solved_landmark)[0], 2)) == [0, 0.05, 0.06, 0.09, 0.24, 0.29, 0.46, 0.39, 0.51]
     assert M.pose_errors(mu0)[0].max() < 0.62 and np.degrees(M.pose_errors(mu0)[1]).max() < 13.0
     assert len(M.solve(mu0, M.WITH_POSE_CLOSURE)) - 1 == 6
+    assert_bearing_side_note(mu0)
     assert n_new_blocks == 4, n_new_blocks
     om_local, _ = M.build_system(M.LOCAL, mu0)
     assert int(M.cholesky_pattern(om_local, M.appearance_order(M.LOCAL)).sum()) == 128
