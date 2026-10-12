@@ -14,7 +14,7 @@ Together, these constraints provide a complete SLAM solution: the robot trajecto
 
 GraphSLAM is typically an **offline, batch solver**. Rather than estimating only the current pose from the previous estimate, it considers all poses and measurements collected over the entire time history at once. When a later observation reveals that an earlier pose or landmark estimate was inaccurate, the solution can adjust the earlier poses, later poses, and landmarks together. This global optimization generally produces a more consistent map and trajectory, at the cost of storing and solving a larger system.
 
-This example introduces those ideas in one dimension, where the equations can be written explicitly and the information matrix can be inspected directly. The same graph structure extends to practical two- and three-dimensional SLAM systems, where the constraints are usually nonlinear and are solved through repeated linearization and optimization.
+This example introduces those ideas in one dimension, where the equations can be written explicitly and the information matrix can be inspected directly. The same graph structure extends to practical two- and three-dimensional SLAM systems, where the constraints are usually nonlinear and are solved through repeated linearization and optimization. The [2D GraphSLAM Example](graphslam_2d_example.md) continues from here and shows how poses with a heading change the matrices.
 
 ---
 
@@ -740,8 +740,6 @@ The entries for $x_1$ show the same effect:
 
 The odometry coupling $\Omega_{01}=-100$ is now four times stronger than each landmark coupling $\Omega_{04}=\Omega_{14}=-25$. When the solver resolves the disagreement about $L_0$, the more heavily weighted odometry is moved less, and the less trusted landmark observations absorb more of the correction.
 
-The rest of the system is built the same way. We stop here without carrying the weighted system through to a solution; the goal is only to show where the weights enter the equations.
-
 ---
 
 ## Overall Interpretation
@@ -776,3 +774,9 @@ and GraphSLAM solves
 ```
 
 to find the set of poses and landmarks that best satisfies all measurements. When measurements are weighted by their uncertainty, the best solution trusts the more precise measurements more.
+
+---
+
+## Next: 2D
+
+Real robots move in a plane and have a heading as well as a position. The [2D GraphSLAM Example](graphslam_2d_example.md) repeats this walkthrough with poses $(x,\ y,\ \theta)$ and landmarks $(x,\ y)$, so $\Omega$ and $\xi$ become block matrices, scalar weights become noise matrices, and the measurements must be linearized.
