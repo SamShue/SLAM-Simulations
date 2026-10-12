@@ -26,7 +26,7 @@ from generate_step_figures import (  # noqa: E402
     BG, CELL_NEW, CELL_ON, CELL_TEXT, CONFLICT, GRID, ODOM, OBS, TEXT, star_marker,
 )
 
-OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images")
+OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Documents", "images")
 
 N_POSES, N_LM = 3, 2
 DIM = 3 * N_POSES + 2 * N_LM

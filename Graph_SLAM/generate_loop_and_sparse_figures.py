@@ -21,7 +21,7 @@ from generate_step_figures import (  # noqa: E402
     BG, CELL_NEW, CELL_ON, CELL_TEXT, CONFLICT, GRID, ODOM, OBS, TEXT, star_marker,
 )
 
-OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images")
+OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Documents", "images")
 TRUTH = "#8fa3ad"
 
 

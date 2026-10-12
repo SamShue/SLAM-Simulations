@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Polygon, Rectangle
 
-OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images")
+OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Documents", "images")
 
 BG = "#1b262c"
 TEXT = "#ffffff"
