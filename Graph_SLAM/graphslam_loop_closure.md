@@ -6,7 +6,7 @@ This example continues the [2D GraphSLAM Example](graphslam_2d_example.md). It a
 
 Odometry only relates each pose to the one before it. Every step adds a little error, and nothing ever corrects it, so the error accumulates. This is called **drift**. After a long drive, the estimated path can be metres away from the real one.
 
-The graph from the previous examples makes the problem easy to see. With only odometry, the graph is a **chain**: $\mathbf{x}_0 - \mathbf{x}_1 - \mathbf{x}_2 - \dots$ A chain has no redundancy, so there are no contradictions for the solver to resolve.
+The graph from the previous examples makes the problem easy to see. With only odometry, the graph is a **chain**: $\mathbf x_0 - \mathbf x_1 - \mathbf x_2 - \dots$ A chain has no redundancy, so there are no contradictions for the solver to resolve.
 
 A **loop closure** is a measurement that connects the current pose to a much earlier part of the graph. It could come from recognizing a place that the robot has been before, or from seeing a landmark that was mapped a long time ago. The chain becomes a ring. The new measurement disagrees with the accumulated odometry, and that disagreement is exactly the information needed to correct the drift.
 
@@ -16,9 +16,9 @@ This is where GraphSLAM being a batch solver over **all** poses pays off. The cl
 
 ## The Scenario
 
-A robot drives once around a $4\text{ m}\times4\text{ m}$ square and ends where it started. It records nine poses, $\mathbf{x}_0,\dots,\mathbf{x}_8$. It turns $90^\circ$ left at each corner. Two landmarks, $L_0$ and $L_1$, stand inside the square.
+A robot drives once around a $4\text{ m}\times4\text{ m}$ square and ends where it started. It records nine poses, $\mathbf x_0,\dots,\mathbf x_8$. It turns $90^\circ$ left at each corner. Two landmarks, $L_0$ and $L_1$, stand inside the square.
 
-| Pose | $\mathbf{x}_0$ | $\mathbf{x}_1$ | $\mathbf{x}_2$ | $\mathbf{x}_3$ | $\mathbf{x}_4$ | $\mathbf{x}_5$ | $\mathbf{x}_6$ | $\mathbf{x}_7$ | $\mathbf{x}_8$ |
+| Pose | $\mathbf x_0$ | $\mathbf x_1$ | $\mathbf x_2$ | $\mathbf x_3$ | $\mathbf x_4$ | $\mathbf x_5$ | $\mathbf x_6$ | $\mathbf x_7$ | $\mathbf x_8$ |
 |---|---|---|---|---|---|---|---|---|---|
 | $x,\ y$ (m) | $0,\ 0$ | $2,\ 0$ | $4,\ 0$ | $4,\ 2$ | $4,\ 4$ | $2,\ 4$ | $0,\ 4$ | $0,\ 2$ | $0,\ 0$ |
 | $\theta$ | $0^\circ$ | $0^\circ$ | $90^\circ$ | $90^\circ$ | $180^\circ$ | $180^\circ$ | $-90^\circ$ | $-90^\circ$ | $0^\circ$ |
@@ -27,9 +27,9 @@ This table is the **ground truth**. It is used only to measure how well the esti
 
 The measurements are:
 
-- A prior on $\mathbf{x}_0$ that anchors it at the origin.
+- A prior on $\mathbf x_0$ that anchors it at the origin.
 - Eight odometry measurements, one between each pair of consecutive poses. The odometry is **biased**: it reports each forward step $1\%$ too long, and each turn about $1.4^\circ$ too large, plus small random-looking errors. This is typical of wheel slip and calibration error.
-- Four local landmark observations: $L_0$ from $\mathbf{x}_0$ and $\mathbf{x}_1$, and $L_1$ from $\mathbf{x}_3$ and $\mathbf{x}_4$. Each landmark is only seen by consecutive poses.
+- Four local landmark observations: $L_0$ from $\mathbf x_0$ and $\mathbf x_1$, and $L_1$ from $\mathbf x_3$ and $\mathbf x_4$. Each landmark is only seen by consecutive poses.
 
 The noise matrices are those of the 2D example:
 
@@ -58,11 +58,11 @@ The system has $9\cdot3+2\cdot2=31$ unknowns. All figures and numbers in this do
 
 ![Top-down view of the dead-reckoned path. It starts at the origin and goes around the square, but the end pose x8 is 0.57 m away from the true start. The true path is shown as a grey dashed square.](images/loop_world_drift.png)
 
-The grey dashed square is where the robot really went. The blue path is what odometry says. The path drifts, and the final pose $\mathbf{x}_8$ ends up $0.57\text{ m}$ from the true start and $12^\circ$ off in heading.
+The grey dashed square is where the robot really went. The blue path is what odometry says. The path drifts, and the final pose $\mathbf x_8$ ends up $0.57\text{ m}$ from the true start and $12^\circ$ off in heading.
 
 The error grows with every step, because each pose inherits the errors of all of the poses before it:
 
-| Pose | $\mathbf{x}_0$ | $\mathbf{x}_1$ | $\mathbf{x}_2$ | $\mathbf{x}_3$ | $\mathbf{x}_4$ | $\mathbf{x}_5$ | $\mathbf{x}_6$ | $\mathbf{x}_7$ | $\mathbf{x}_8$ |
+| Pose | $\mathbf x_0$ | $\mathbf x_1$ | $\mathbf x_2$ | $\mathbf x_3$ | $\mathbf x_4$ | $\mathbf x_5$ | $\mathbf x_6$ | $\mathbf x_7$ | $\mathbf x_8$ |
 |---|---|---|---|---|---|---|---|---|---|
 | Position error (m) | 0 | 0.03 | 0.07 | 0.12 | 0.25 | 0.29 | 0.46 | 0.40 | 0.57 |
 | Heading error ($^\circ$) | 0 | 1.7 | 2.6 | 4.6 | 6.3 | 7.4 | 9.5 | 10.6 | 12.0 |
@@ -90,7 +90,7 @@ The two landmarks do not help either. Each is seen by two consecutive poses, whi
 
 ![The same dead-reckoned path, with a red dashed link between x8 and x0. The estimate puts them 0.57 m apart, but the loop closure measurement says they are only 0.03 m apart.](images/loop_world_closure.png)
 
-At $\mathbf{x}_8$, the robot recognizes that it is back at the place where it started. For example, the sensor data at $\mathbf{x}_8$ might match the data recorded at $\mathbf{x}_0$. Matching them gives a **relative pose**: where $\mathbf{x}_0$ is, as seen from $\mathbf{x}_8$:
+At $\mathbf x_8$, the robot recognizes that it is back at the place where it started. For example, the sensor data at $\mathbf x_8$ might match the data recorded at $\mathbf x_0$. Matching them gives a **relative pose**: where $\mathbf x_0$ is, as seen from $\mathbf x_8$:
 
 ```math
 z=\begin{bmatrix}0.02\\-0.015\\0.01\end{bmatrix}.
@@ -100,7 +100,7 @@ The robot is almost exactly where it started, within $0.03\text{ m}$ and well un
 
 ### The equations
 
-This is the same relative-pose measurement as odometry. The only difference is that it connects two poses that are far apart in time, $\mathbf{x}_8$ and $\mathbf{x}_0$, instead of consecutive ones. The expected measurement and the Jacobians are $h_{\text{odom}}(\mathbf{x}_8,\mathbf{x}_0)$, with $i=8$ and $j=0$, and its contribution is again $J^\top W J$ and $J^\top W\hat z$. We give it the same noise matrix $W_{\text{odom}}$.
+This is the same relative-pose measurement as odometry. The only difference is that it connects two poses that are far apart in time, $\mathbf x_8$ and $\mathbf x_0$, instead of consecutive ones. The expected measurement and the Jacobians are $h_{\text{odom}}(\mathbf x_8,\mathbf x_0)$, with $i=8$ and $j=0$, and its contribution is again $J^\top W J$ and $J^\top W\hat z$. We give it the same noise matrix $W_{\text{odom}}$.
 
 At the dead-reckoned estimate, the current poses predict
 
@@ -110,11 +110,11 @@ h(\bar\mu)=\begin{bmatrix}-0.359\\0.447\\-0.210\end{bmatrix},
 z-h(\bar\mu)=\begin{bmatrix}0.379\\-0.462\\0.220\end{bmatrix}.
 ```
 
-The estimate claims that $\mathbf{x}_0$ is $0.36\text{ m}$ behind and $0.45\text{ m}$ to the left of $\mathbf{x}_8$, and rotated by $-12^\circ$. The closure says they are at the same place. The residual is large, and this large residual is the drift, expressed as a single measurement.
+The estimate claims that $\mathbf x_0$ is $0.36\text{ m}$ behind and $0.45\text{ m}$ to the left of $\mathbf x_8$, and rotated by $-12^\circ$. The closure says they are at the same place. The residual is large, and this large residual is the drift, expressed as a single measurement.
 
 ### What changes in the matrix
 
-The measurement connects $\mathbf{x}_8$ and $\mathbf{x}_0$, so it touches four blocks: $\Omega_{x_0x_0}$, $\Omega_{x_8x_8}$, and the pair $\Omega_{x_0x_8}$ and $\Omega_{x_8x_0}$. The new off-diagonal block is
+The measurement connects $\mathbf x_8$ and $\mathbf x_0$, so it touches four blocks: $\Omega_{x_0x_0}$, $\Omega_{x_8x_8}$, and the pair $\Omega_{x_0x_8}$ and $\Omega_{x_8x_0}$. The new off-diagonal block is
 
 ```math
 \Omega_{x_0x_8}=
@@ -140,12 +140,12 @@ Because the measurements are nonlinear, we solve, relinearize, and repeat, as in
 The effect of the loop closure is large:
 
 - The final position error drops from $0.57\text{ m}$ to $0.02\text{ m}$.
-- The worst position error anywhere on the trajectory is $0.07\text{ m}$, at $\mathbf{x}_4$.
+- The worst position error anywhere on the trajectory is $0.07\text{ m}$, at $\mathbf x_4$.
 - The heading errors, which reached $12^\circ$, are all under $1^\circ$.
 
 ![Two charts of error against pose. Position error and heading error both grow steadily along the path for dead reckoning and for the solution without the loop closure. With the loop closure, both stay small for every pose.](images/loop_error.png)
 
-| Pose | $\mathbf{x}_0$ | $\mathbf{x}_1$ | $\mathbf{x}_2$ | $\mathbf{x}_3$ | $\mathbf{x}_4$ | $\mathbf{x}_5$ | $\mathbf{x}_6$ | $\mathbf{x}_7$ | $\mathbf{x}_8$ |
+| Pose | $\mathbf x_0$ | $\mathbf x_1$ | $\mathbf x_2$ | $\mathbf x_3$ | $\mathbf x_4$ | $\mathbf x_5$ | $\mathbf x_6$ | $\mathbf x_7$ | $\mathbf x_8$ |
 |---|---|---|---|---|---|---|---|---|---|
 | Dead reckoning (m) | 0 | 0.03 | 0.07 | 0.12 | 0.25 | 0.29 | 0.46 | 0.40 | 0.57 |
 | Solved without closure (m) | 0 | 0.05 | 0.06 | 0.09 | 0.22 | 0.25 | 0.41 | 0.37 | 0.54 |
@@ -153,13 +153,13 @@ The effect of the loop closure is large:
 
 ### Where did the correction go?
 
-The solver did not only move $\mathbf{x}_8$. It moved nearly every pose, by an amount that grows along the path:
+The solver did not only move $\mathbf x_8$. It moved nearly every pose, by an amount that grows along the path:
 
-| Pose | $\mathbf{x}_0$ | $\mathbf{x}_1$ | $\mathbf{x}_2$ | $\mathbf{x}_3$ | $\mathbf{x}_4$ | $\mathbf{x}_5$ | $\mathbf{x}_6$ | $\mathbf{x}_7$ | $\mathbf{x}_8$ |
+| Pose | $\mathbf x_0$ | $\mathbf x_1$ | $\mathbf x_2$ | $\mathbf x_3$ | $\mathbf x_4$ | $\mathbf x_5$ | $\mathbf x_6$ | $\mathbf x_7$ | $\mathbf x_8$ |
 |---|---|---|---|---|---|---|---|---|---|
 | Distance moved (m) | 0 | 0.01 | 0.06 | 0.11 | 0.25 | 0.28 | 0.48 | 0.42 | 0.59 |
 
-This matches how the drift built up: $\mathbf{x}_0$ is anchored by the prior and does not move, and the later poses carry more accumulated error, so they are moved the most.
+This matches how the drift built up: $\mathbf x_0$ is anchored by the prior and does not move, and the later poses carry more accumulated error, so they are moved the most.
 
 This is the 2D version of the 1D example, where a $0.10\text{ m}$ disagreement in a small loop was shared among the measurements around it. Here the ring has nine relative-pose constraints with the same weight, eight odometry measurements and the closure, so the misclosure is shared among all of them.
 
@@ -169,9 +169,9 @@ The weights decide how the error is shared. If the closure were given a much lar
 
 ## Not Every Closure Is Equally Informative
 
-The loop closure above came from recognizing a place, which gives a full relative pose with three constraints. A different kind of closure is to **see an old landmark again**. Suppose that, instead, $\mathbf{x}_8$ re-observes $L_0$, the landmark that $\mathbf{x}_0$ and $\mathbf{x}_1$ saw at the start.
+The loop closure above came from recognizing a place, which gives a full relative pose with three constraints. A different kind of closure is to **see an old landmark again**. Suppose that, instead, $\mathbf x_8$ re-observes $L_0$, the landmark that $\mathbf x_0$ and $\mathbf x_1$ saw at the start.
 
-This is also a loop closure, and it adds edges between $\mathbf{x}_8$ and a landmark that is tied to the start of the trajectory. But it barely helps:
+This is also a loop closure, and it adds edges between $\mathbf x_8$ and a landmark that is tied to the start of the trajectory. But it barely helps:
 
 | | Final position error (m) |
 |---|---|
@@ -183,7 +183,7 @@ The reason is that one landmark observation is only **two** equations, while a p
 
 ![The landmark L0 with a circle around it passing through the true position of x8 and the dead-reckoned position of x8. Both poses are on the circle, and both see L0 at nearly the same distance and bearing.](images/loop_landmark_closure.png)
 
-In this scene, the drift happens to be almost along that circle. The dead-reckoned $\mathbf{x}_8$ sees $L_0$ nearly where the true $\mathbf{x}_8$ does, so the new observation has almost no residual and nothing to correct.
+In this scene, the drift happens to be almost along that circle. The dead-reckoned $\mathbf x_8$ sees $L_0$ nearly where the true $\mathbf x_8$ does, so the new observation has almost no residual and nothing to correct.
 
 How much a loop closure helps depends on how many of the pose's degrees of freedom it constrains, and in which directions. Re-observing two landmarks at once, or one landmark together with a heading measurement, would constrain all three.
 

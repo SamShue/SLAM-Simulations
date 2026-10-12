@@ -147,7 +147,7 @@ The loop-closure system has 31 unknowns, and a dense factor would have 496 non-z
 
 ### What the loop closure costs
 
-Without the loop closure, the first-appearance order gives a factor with only $128$ non-zeros. With it, $204$. The closure ties $\mathbf{x}_8$ to $\mathbf{x}_0$, so eliminating each pose in turn passes a link to $\mathbf{x}_8$ along the chain, and the last block row of $L$ fills.
+Without the loop closure, the first-appearance order gives a factor with only $128$ non-zeros. With it, $204$. The closure ties $\mathbf x_8$ to $\mathbf x_0$, so eliminating each pose in turn passes a link to $\mathbf x_8$ along the chain, and the last block row of $L$ fills.
 
 It costs more, but not much more. The cost of a loop closure is proportional to the length of the loop, not its square. Here is the same comparison for longer trajectories:
 
@@ -206,7 +206,7 @@ The result is exactly the same as solving the full system. In the example below,
 
 ### A landmark closure becomes a pose-pose closure
 
-The previous document looked at the case where $\mathbf{x}_8$ re-observes $L_0$ instead of recognizing a place. Let us use that system here. The landmark $L_0$ is seen by $\mathbf{x}_0$, $\mathbf{x}_1$, and $\mathbf{x}_8$. Its own block is
+The previous document looked at the case where $\mathbf x_8$ re-observes $L_0$ instead of recognizing a place. Let us use that system here. The landmark $L_0$ is seen by $\mathbf x_0$, $\mathbf x_1$, and $\mathbf x_8$. Its own block is
 
 ```math
 \Omega_{L_0L_0}=
@@ -216,7 +216,7 @@ The previous document looked at the case where $\mathbf{x}_8$ re-observes $L_0$ 
 \end{bmatrix}.
 ```
 
-Eliminating $L_0$ connects every pair of poses that saw it. For example, there was no direct link between $\mathbf{x}_0$ and $\mathbf{x}_8$ before. Now there is, with the block
+Eliminating $L_0$ connects every pair of poses that saw it. For example, there was no direct link between $\mathbf x_0$ and $\mathbf x_8$ before. Now there is, with the block
 
 ```math
 -\Omega_{x_0L_0}\,\Omega_{L_0L_0}^{-1}\,\Omega_{L_0x_8}=
@@ -229,7 +229,7 @@ Eliminating $L_0$ connects every pair of poses that saw it. For example, there w
 
 ![Left: the information matrix of the system in which x8 re-observes L0, with the landmark rows and columns outlined in yellow. Right: the 27 by 27 pose-only matrix after eliminating the landmarks, with four new pose-pose blocks, between x0 and x8 and between x1 and x8, highlighted in yellow.](images/sparse_schur.png)
 
-This is the same fill-in rule as before, seen from the landmark's side: eliminating a landmark that was seen by several poses couples those poses. It also shows what a landmark closure really is. After the landmark is eliminated, re-observing $L_0$ from $\mathbf{x}_8$ is equivalent to a loop closure between poses $\mathbf{x}_8$, $\mathbf{x}_0$, and $\mathbf{x}_1$.
+This is the same fill-in rule as before, seen from the landmark's side: eliminating a landmark that was seen by several poses couples those poses. It also shows what a landmark closure really is. After the landmark is eliminated, re-observing $L_0$ from $\mathbf x_8$ is equivalent to a loop closure between poses $\mathbf x_8$, $\mathbf x_0$, and $\mathbf x_1$.
 
 ---
 
