@@ -274,15 +274,17 @@ def make_system_figure(indices, prev_indices, mu0, name, highlight=None):
     save(fig, name)
 
 
-def make_error_chart(mu0, solved_local, solved_pose):
+def make_error_chart(series, filename):
+    """Position and heading error against pose for each (label, color, estimate, marker). The y ranges are
+    fixed so that the two error charts in the loop-closure document can be compared directly."""
     fig, (a, b) = plt.subplots(1, 2, figsize=(14, 5.6), facecolor=BG)
-    series = [("dead reckoning", CONFLICT, mu0, "o"), ("solved, no loop closure", TRUTH, solved_local, "s"),
-              ("solved, with loop closure", ODOM, solved_pose, "D")]
-    for ax, which, ylabel, scale in [(a, 0, "position error (m)", 1.0), (b, 1, "heading error (degrees)", 180 / np.pi)]:
+    for ax, which, ylabel, scale, top in [(a, 0, "position error (m)", 1.0, 0.62),
+                                          (b, 1, "heading error (degrees)", 180 / np.pi, 13.0)]:
         ax.set_facecolor(BG)
         for label, color, mu, mk in series:
             err = M.pose_errors(mu)[which] * scale
             ax.plot(range(M.N_POSES), err, color=color, marker=mk, linewidth=2.6, markersize=8, label=label)
+        ax.set_ylim(-0.03 * top, top)
         ax.set_xticks(range(M.N_POSES))
         ax.set_xticklabels([rf"$x_{i}$" for i in range(M.N_POSES)], color=TEXT, fontsize=13)
         ax.tick_params(colors=TEXT, labelsize=13)
@@ -292,7 +294,7 @@ def make_error_chart(mu0, solved_local, solved_pose):
             spine.set_color(GRID)
     a.legend(facecolor=BG, edgecolor=GRID, labelcolor=TEXT, fontsize=12, loc="upper left")
     fig.tight_layout()
-    save(fig, "loop_error.png")
+    save(fig, filename)
 
 
 # ------------------------------------------------------------------ sparse-solver figures
@@ -514,7 +516,12 @@ def main():
     make_closure_map(mu0)
     make_solved_map(mu0, solved_pose)
     make_landmark_closure_map(mu0)
-    make_error_chart(mu0, solved_local, solved_pose)
+    solved_landmark = M.solve(mu0, M.WITH_LANDMARK_CLOSURE)[-1]
+    make_error_chart([("dead reckoning", CONFLICT, mu0, "o"), ("solved, no loop closure", TRUTH, solved_local, "s"),
+                      ("solved, with loop closure", ODOM, solved_pose, "D")], "loop_error.png")
+    make_error_chart([("dead reckoning", CONFLICT, mu0, "o"),
+                      ("solved, $x_8$ re-observes $L_0$", OBS, solved_landmark, "^"),
+                      ("solved, place-recognition closure", ODOM, solved_pose, "D")], "loop_error_landmark.png")
     make_system_figure(M.LOCAL, [0], mu0, "loop_system_local.png")
     make_system_figure(M.WITH_POSE_CLOSURE, M.LOCAL, mu0, "loop_system_closure.png", highlight=M.POSE_CLOSURE)
 
@@ -540,6 +547,8 @@ def main():
     assert max(np.linalg.norm(solved_local[M.pose_slice(i)][:2] - mu0[M.pose_slice(i)][:2]) for i in range(9)) < 0.05
     solved_landmark = M.solve(mu0, M.WITH_LANDMARK_CLOSURE)[-1]
     assert abs(M.pose_errors(solved_landmark)[0][8] - 0.51) < 0.005
+    assert list(np.round(M.pose_errors(solved_landmark)[0], 2)) == [0, 0.05, 0.06, 0.09, 0.24, 0.29, 0.46, 0.39, 0.51]
+    assert M.pose_errors(mu0)[0].max() < 0.62 and np.degrees(M.pose_errors(mu0)[1]).max() < 13.0
     assert len(M.solve(mu0, M.WITH_POSE_CLOSURE)) - 1 == 6
     assert n_new_blocks == 4, n_new_blocks
     om_local, _ = M.build_system(M.LOCAL, mu0)

@@ -201,6 +201,12 @@ This is also a loop closure, and it adds edges between $\mathbf x_8$ and a landm
 | Solved with the place-recognition closure | 0.02 |
 | Solved after re-observing $L_0$ | 0.51 |
 
+Here is the error at every pose, in the same format and on the same axes as the chart in Step 3. The place-recognition closure from before is repeated in blue for comparison:
+
+![Two charts of error against pose, using the same axes as the earlier chart. For dead reckoning and for the solution where x8 re-observes L0, position and heading error both grow steadily along the path, and the two curves are close together, with the landmark closure only slightly lower. With the place-recognition closure, both errors stay small at every pose.](images/loop_error_landmark.png)
+
+The landmark closure only trims the error slightly, and the improvement is visible at every pose: the heading error at $\mathbf x_8$ falls from $12.0^\circ$ to $11.1^\circ$, compared with $0.7^\circ$ for the place-recognition closure. The correction is still spread along the trajectory, as it was before. There is simply very little correction to spread.
+
 The reason is that one landmark observation is only **two** equations, while a pose has **three** unknowns $(x,\ y,\ \theta)$. It cannot pin down the pose by itself. Any pose on the circle around the landmark, with a matching heading, sees the landmark in the same place in its own frame:
 
 ![The landmark L0 with a circle around it passing through the true position of x8 and the dead-reckoned position of x8. Both poses are on the circle, and both see L0 at nearly the same distance and bearing.](images/loop_landmark_closure.png)
