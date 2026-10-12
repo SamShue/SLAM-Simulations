@@ -10,6 +10,13 @@ The graph from the previous examples makes the problem easy to see. With only od
 
 A **loop closure** is a measurement that connects the current pose to a much earlier part of the graph. It could come from recognizing a place that the robot has been before, or from seeing a landmark that was mapped a long time ago. The chain becomes a ring. The new measurement disagrees with the accumulated odometry, and that disagreement is exactly the information needed to correct the drift.
 
+> **The key idea of this document.** A loop closure is two separate things:
+>
+> 1. **Identification:** deciding that the robot is at a previously visited pose, or is looking at a previously observed landmark. This is a perception and data-association problem. It happens *before* the solver, and it is where most of the difficulty of loop closure lies.
+> 2. **Using the result:** once the identification has been made, the closure is just another measurement between two nodes of the graph. It adds a Jacobian and a noise matrix, and fills in a few more blocks of $\Omega$ and $\xi$, exactly like odometry or a landmark observation.
+>
+> The solver does not know or care which measurements are loop closures. It is the same $\Omega\mu=\xi$, solved the same way. The only thing that is special about a closure is **where** in the matrix its contribution lands: far from the diagonal, linking two nodes that are far apart in time.
+
 This is where GraphSLAM being a batch solver over **all** poses pays off. The closure does not only fix the latest pose. The solver spreads the correction along the entire trajectory, including poses that were estimated long before the closure was observed.
 
 ---
@@ -96,11 +103,26 @@ At $\mathbf x_8$, the robot recognizes that it is back at the place where it sta
 z=\begin{bmatrix}0.02\\-0.015\\0.01\end{bmatrix}.
 ```
 
-The robot is almost exactly where it started, within $0.03\text{ m}$ and well under a degree.
+In this example, the robot ends almost exactly where it started: within $0.03\text{ m}$ and well under a degree. This is a convenience for the example, and the side note below explains why a real robot would not need it.
+
+The hard part of this step, deciding that $\mathbf x_8$ really is back at $\mathbf x_0$, is **identification**, and it happens outside the equations. We simply assume that it has been done correctly, and the rest of this step shows what happens once it has.
+
+> **Side note: a loop closure does not need the robot to return to the same pose.**
+>
+> In this example, the true path ends exactly where it started, and the closure measurement is nearly zero. That is only a convenience for the walkthrough. A real robot almost never returns to exactly the same position and heading, and it does not need to.
+>
+> - **$\mathbf x_8$ is a new node.** It is not $\mathbf x_0$ revisited. The graph keeps both nodes, with their own estimates, and the closure is an **edge** between them. The measurement says how $\mathbf x_0$ is positioned relative to $\mathbf x_8$, and that relative pose can be anything: $0.3\text{ m}$ to one side, $1.5\text{ m}$ ahead, rotated by $20^\circ$. Our measurement $z\approx(0.02,\ -0.015,\ 0.01)$ was close to zero only because the true poses happen to coincide.
+> - **The views only need to overlap.** What is required is that the robot sees enough of the same part of the world that the two sets of sensor data can be aligned. The alignment is typically done by scan matching, image feature matching, or a similar registration method. Its output is the relative pose, along with a covariance that describes how much to trust it. That covariance becomes the noise matrix $W$ of the closure.
+> - **Finding candidates is part of identification.** The front end does not compare the current view against every old one. It uses the current estimate, with its uncertainty, to pick nearby candidate poses, or uses an appearance-based place-recognition method to propose them, and then verifies each candidate by registration. Only a verified match becomes a measurement.
+> - **Landmark re-observation needs no matching pose at all.** Seeing an old landmark from a different position or direction is a perfectly good closure, as in the $L_0$ example later in this document. The observing pose can be anywhere that the landmark is visible.
+>
+> The equations do not change. The measurement is the relative pose between two distinct nodes, and the expected measurement $h_{\text{odom}}$ and its Jacobians work for any pair, however far apart they are, and whatever the relative pose between them is. The robot's returning to an identical pose is a special case of this, not a requirement.
 
 ### The equations
 
 This is the same relative-pose measurement as odometry. The only difference is that it connects two poses that are far apart in time, $\mathbf x_8$ and $\mathbf x_0$, instead of consecutive ones. The expected measurement and the Jacobians are $h_{\text{odom}}(\mathbf x_8,\mathbf x_0)$, with $i=8$ and $j=0$, and its contribution is again $J^\top W J$ and $J^\top W\hat z$. We give it the same noise matrix $W_{\text{odom}}$.
+
+Nothing else changes. The closure is added to the same system, the system is linearized the same way, and it is solved the same way as in the 2D example. Compare this with the 2D example's steps, where a measurement connected $\mathbf x_1$ and $L_0$, or $\mathbf x_1$ and $\mathbf x_2$. Here the measurement connects $\mathbf x_8$ and $\mathbf x_0$.
 
 At the dead-reckoned estimate, the current poses predict
 
@@ -135,7 +157,7 @@ The graph is a ring now. In the matrix, the non-zero blocks are no longer all ne
 
 ![Top-down view of the three paths: the true square, the dead-reckoned path in red, and the path after solving with the loop closure in blue. The blue path lies almost exactly on the true square, and x8 returns to the origin.](images/loop_world_solved.png)
 
-Because the measurements are nonlinear, we solve, relinearize, and repeat, as in the 2D example. It converges in six iterations.
+Because the measurements are nonlinear, we solve, relinearize, and repeat, as in the 2D example. It converges in six iterations. This is the same solver and the same procedure that the earlier examples used. There is no special loop-closure step, and no separate "correction" pass. The only thing that has changed is that one more measurement is in $\Omega$ and $\xi$.
 
 The effect of the loop closure is large:
 
@@ -191,7 +213,7 @@ How much a loop closure helps depends on how many of the pose's degrees of freed
 
 ## Things to Watch For
 
-- **Data association.** A loop closure is only helpful if it is **correct**. If the robot decides that it is back at a place it has never been, the false closure contradicts the true odometry, and a solver that trusts it will bend the whole map to satisfy it. Real systems verify closures geometrically and use robust cost functions that reduce the influence of measurements with large residuals.
+- **Data association.** This is the identification half of loop closure, and it is where the real difficulty lies. A loop closure is only helpful if it is **correct**. If the robot decides that it is back at a place it has never been, the false closure contradicts the true odometry, and a solver that trusts it will bend the whole map to satisfy it. Real systems verify closures geometrically and use robust cost functions that reduce the influence of measurements with large residuals.
 - **Weights.** The noise matrix of a closure should be honest. An overconfident closure distorts the trajectory, and an underconfident one wastes the information.
 - **The matrix is no longer banded.** The corner blocks that a closure adds are exactly what makes solving the system more interesting. See [Solving the System Efficiently](graphslam_sparse_solvers.md).
 
@@ -199,8 +221,10 @@ How much a loop closure helps depends on how many of the pose's degrees of freed
 
 ## Summary
 
+- Loop closure has two parts. **Identification** decides that the robot is at a previously visited pose, or is seeing a previously observed landmark. **Using it** means adding one more ordinary measurement between those two nodes.
+- The solver is unchanged. Loop closure only populates the matrix in a particular way, with blocks far from the diagonal, and the same $\Omega\mu=\xi$ is solved the same way.
 - Odometry alone forms a chain, and a chain cannot correct drift.
 - A loop closure connects the current pose to an earlier one, which turns the chain into a ring.
-- The closure is just another measurement with a Jacobian and a noise matrix, but its residual carries the accumulated drift.
+- The closure has a Jacobian and a noise matrix like any other measurement, but its residual carries the accumulated drift.
 - Because GraphSLAM solves for all poses at once, the correction is spread along the whole trajectory.
 - A closure only helps in the directions it constrains, and only when it is correct.
