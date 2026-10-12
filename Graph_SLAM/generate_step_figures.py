@@ -129,7 +129,7 @@ def draw_graph(ax, nodes, edges):
 def draw_system(ax, omega, xi, prev_omega, prev_xi):
     n = len(NAMES)
     ax.set_xlim(-1.3, 10.6)
-    ax.set_ylim(n + 1.5, -1.3)
+    ax.set_ylim(n + 1.8, -1.3)
     ax.set_aspect("equal")
     ax.axis("off")
     xi_x, xi_w = 8.6, 1.9
@@ -187,9 +187,9 @@ def star_marker():
     return pts
 
 
-def draw_world(fig, title, odoms, obs, positions, conflict_note):
+def draw_world(fig, odoms, obs, positions, conflict_note):
     """Literal 1D view: every node sits at its measured position on one metre axis."""
-    ax = fig.add_axes([0.02, 0.02, 0.96, 0.84])
+    ax = fig.add_axes([0.02, 0.01, 0.96, 0.98])
     ax.set_facecolor(BG)
     ax.set_xlim(-1.9, 6.1)
     ax.set_ylim(-5.0, 6.8)
@@ -255,10 +255,6 @@ def draw_world(fig, title, odoms, obs, positions, conflict_note):
     if conflict_note:
         ax.text(5.95, -4.6, conflict_note, color=CONFLICT, fontsize=14, ha="right", va="center")
 
-    fig.text(0.5, 0.955, title, color=TEXT, fontsize=24, ha="center", va="center")
-    fig.text(0.5, 0.905, "1D world view: every pose and landmark placed on one line at the position its "
-             "measurements imply", color=GRID, fontsize=14, ha="center", va="center")
-
 
 def main():
     os.makedirs(OUT_DIR, exist_ok=True)
@@ -269,7 +265,7 @@ def main():
     odoms, obs = [], []
     conflict_note = ""
 
-    for (title, measurements), fname, world_fname in zip(STEPS, FILES, WORLD_FILES):
+    for (_, measurements), fname, world_fname in zip(STEPS, FILES, WORLD_FILES):
         prev_omega, prev_xi = omega.copy(), xi.copy()
         for kind, a, b, z, w in measurements:
             add_measurement(omega, xi, kind, a, b, z, w)
@@ -293,15 +289,14 @@ def main():
                 obs.append((a, b, z, end, conflict))
         conflict_note_fig = conflict_note.replace("L0", "$L_0$").replace("x0", "$x_0$").replace("x1", "$x_1$")
 
-        fig = plt.figure(figsize=(16, 6.6), facecolor=BG)
-        fig.text(0.5, 0.955, title, color=TEXT, fontsize=24, ha="center", va="center")
-        draw_graph(fig.add_axes([0.01, 0.03, 0.40, 0.86]), nodes, edges)
-        draw_system(fig.add_axes([0.43, 0.01, 0.56, 0.90]), omega, xi, prev_omega, prev_xi)
+        fig = plt.figure(figsize=(16, 6.0), facecolor=BG)
+        draw_graph(fig.add_axes([0.01, 0.02, 0.40, 0.96]), nodes, edges)
+        draw_system(fig.add_axes([0.43, 0.0, 0.56, 0.98]), omega, xi, prev_omega, prev_xi)
         fig.savefig(os.path.join(OUT_DIR, fname), dpi=140, facecolor=BG)
         plt.close(fig)
 
-        fig = plt.figure(figsize=(16, 7.4), facecolor=BG)
-        draw_world(fig, title, odoms, obs, positions, conflict_note_fig)
+        fig = plt.figure(figsize=(16, 6.6), facecolor=BG)
+        draw_world(fig, odoms, obs, positions, conflict_note_fig)
         fig.savefig(os.path.join(OUT_DIR, world_fname), dpi=140, facecolor=BG)
         plt.close(fig)
 
