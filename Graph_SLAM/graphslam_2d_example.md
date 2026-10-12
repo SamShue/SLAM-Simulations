@@ -398,10 +398,10 @@ At the linearization point, $\bar\theta_0=0$ and the landmark is at $d=\bar L_0-
 
 ```math
 J=
-\left[\begin{array}{ccc|cc}
+\begin{bmatrix}
 -1&0&1&1&0\\
 0&-1&-3&0&1
-\end{array}\right].
+\end{bmatrix}.
 ```
 
 The two columns on the right are $R(0)^\top=I$, because the robot is facing along $x$. The third column is $\frac{\partial R^\top}{\partial\theta}d=(1,\ -3)$. It says that if the heading of $\mathbf{x}_0$ were off by a small angle, the landmark would appear to move, and by more the farther away it is.
@@ -410,29 +410,27 @@ The contribution of this measurement is
 
 ```math
 \Delta\Omega=J^\top W_LJ=
-\left[\begin{array}{ccc|cc}
+\begin{bmatrix}
 100&0&-100&-100&0\\
 0&25&75&0&-25\\
 -100&75&325&100&-75\\
-\hline
 -100&0&100&100&0\\
 0&-25&-75&0&25
-\end{array}\right],
+\end{bmatrix},
 \qquad
 \Delta\xi=J^\top W_L\hat z=
-\left[\begin{array}{c}
+\begin{bmatrix}
 -300\\
 -25\\
 225\\
-\hline
 300\\
 25
-\end{array}\right].
+\end{bmatrix}.
 ```
 
-The rows and columns are for $\mathbf{x}_0$ (three variables) and $L_0$ (two variables). A few things to notice:
+In every matrix from here on, the rows and columns are ordered by node, with three entries for each pose followed by two for each landmark. Here they are $x_0,\ y_0,\ \theta_0,\ L_{0,x},\ L_{0,y}$, so the top-left $3\times3$ block belongs to $\mathbf{x}_0$ and the bottom-right $2\times2$ block belongs to $L_0$. The figures at the end of each step show the block boundaries. A few things to notice:
 
-- The $L_0$ block is $\operatorname{diag}(100,\ 25)$. In the world frame, the landmark's $x$ position is well known and its $y$ position less so, because the robot is facing along $x$.
+- The $L_0$ block is $\mathrm{diag}(100,\ 25)$. In the world frame, the landmark's $x$ position is well known and its $y$ position less so, because the robot is facing along $x$.
 - The $\theta_0\theta_0$ entry is $325=100\cdot1^2+25\cdot(-3)^2$. Heading is strongly tied to this observation, because a landmark $3\text{ m}$ away swings a long way for a small heading error.
 - The pose and landmark are linked by off-diagonal blocks, like the $-25$ in the 1D example.
 
@@ -440,24 +438,22 @@ Adding this to the prior, the non-zero rows and columns of the system, ordered $
 
 ```math
 \Omega=
-\left[\begin{array}{ccc|cc}
+\begin{bmatrix}
 200&0&-100&-100&0\\
 0&125&75&0&-25\\
 -100&75&725&100&-75\\
-\hline
 -100&0&100&100&0\\
 0&-25&-75&0&25
-\end{array}\right],
+\end{bmatrix},
 \qquad
 \xi=
-\left[\begin{array}{c}
+\begin{bmatrix}
 -300\\
 -25\\
 225\\
-\hline
 300\\
 25
-\end{array}\right].
+\end{bmatrix}.
 ```
 
 All the other rows and columns are still zero.
@@ -493,37 +489,35 @@ At the linearization point, $\bar\theta_0=0$ and $d=\bar p_1-\bar p_0=(2,\ 0)$. 
 
 ```math
 J=
-\left[\begin{array}{ccc|ccc}
+\begin{bmatrix}
 -1&0&0&1&0&0\\
 0&-1&-2&0&1&0\\
 0&0&-1&0&0&1
-\end{array}\right].
+\end{bmatrix}.
 ```
 
 The $-2$ is again a lever arm. If $\mathbf{x}_0$ were rotated slightly, a pose $2\text{ m}$ ahead would appear to be shifted sideways. This gives
 
 ```math
 \Delta\Omega=
-\left[\begin{array}{ccc|ccc}
+\begin{bmatrix}
 100&0&0&-100&0&0\\
 0&100&200&0&-100&0\\
 0&200&800&0&-200&-400\\
-\hline
 -100&0&0&100&0&0\\
 0&-100&-200&0&100&0\\
 0&0&-400&0&0&400
-\end{array}\right],
+\end{bmatrix},
 \qquad
 \Delta\xi=
-\left[\begin{array}{c}
+\begin{bmatrix}
 -200\\
 0\\
 -628.32\\
-\hline
 200\\
 0\\
 628.32
-\end{array}\right],
+\end{bmatrix},
 ```
 
 with rows and columns for $\mathbf{x}_0$ and $\mathbf{x}_1$. The $628.32$ is $400\cdot\frac{\pi}{2}$, the angle term weighted by $400$.
@@ -536,7 +530,7 @@ From $\mathbf{x}_1$, the robot sees $L_0$ again:
 z=\begin{bmatrix}1.15\\-0.90\end{bmatrix}.
 ```
 
-It uses the same noise matrix $W_L=\operatorname{diag}(100,\ 25)$ as before. But now the robot is facing along $+y$, with $\bar\theta_1=\pi/2$. The current estimate predicts
+It uses the same noise matrix $W_L=\mathrm{diag}(100,\ 25)$ as before. But now the robot is facing along $+y$, with $\bar\theta_1=\pi/2$. The current estimate predicts
 
 ```math
 h(\bar\mu)=R(\pi/2)^\top(\bar L_0-\bar p_1)=
@@ -549,34 +543,32 @@ This residual is the inconsistency, and it makes $\hat z=(-0.4208,\ -2.4708)$ di
 
 ```math
 J=
-\left[\begin{array}{ccc|cc}
+\begin{bmatrix}
 0&-1&-1&0&1\\
 1&0&-1&-1&0
-\end{array}\right],
+\end{bmatrix},
 ```
 
 and the contribution, with rows and columns for $\mathbf{x}_1$ and $L_0$, is
 
 ```math
 \Delta\Omega=
-\left[\begin{array}{ccc|cc}
+\begin{bmatrix}
 25&0&-25&-25&0\\
 0&100&100&0&-100\\
 -25&100&125&25&-100\\
-\hline
 -25&0&25&25&0\\
 0&-100&-100&0&100
-\end{array}\right],
+\end{bmatrix},
 \qquad
 \Delta\xi=
-\left[\begin{array}{c}
+\begin{bmatrix}
 -61.77\\
 42.08\\
 103.85\\
-\hline
 61.77\\
 -42.08
-\end{array}\right].
+\end{bmatrix}.
 ```
 
 This is where the pose matters most. Because the robot now faces $+y$, the same noise matrix lands differently in the world frame. The $L_0$ block is
@@ -589,7 +581,7 @@ J_L^\top W_LJ_L=R\!\left(\tfrac{\pi}{2}\right)W_L\,R\!\left(\tfrac{\pi}{2}\right
 \end{bmatrix}.
 ```
 
-The roles of $x$ and $y$ are swapped, because "forward" for this robot is now the world $y$ direction. The first observation constrained $L_0$'s $x$ position strongly, and this one constrains its $y$ position strongly. Added together, $\Omega_{L_0L_0}=\operatorname{diag}(125,\ 125)$.
+The roles of $x$ and $y$ are swapped, because "forward" for this robot is now the world $y$ direction. The first observation constrained $L_0$'s $x$ position strongly, and this one constrains its $y$ position strongly. Added together, $\Omega_{L_0L_0}=\mathrm{diag}(125,\ 125)$.
 
 ### The system so far
 
@@ -597,32 +589,28 @@ The non-zero rows and columns, ordered $(\mathbf{x}_0,\ \mathbf{x}_1,\ L_0)$, ar
 
 ```math
 \Omega=
-\left[\begin{array}{ccc|ccc|cc}
+\begin{bmatrix}
 300&0&-100&-100&0&0&-100&0\\
 0&225&275&0&-100&0&0&-25\\
 -100&275&1525&0&-200&-400&100&-75\\
-\hline
 -100&0&0&125&0&-25&-25&0\\
 0&-100&-200&0&200&100&0&-100\\
 0&0&-400&-25&100&525&25&-100\\
-\hline
 -100&0&100&-25&0&25&125&0\\
 0&-25&-75&0&-100&-100&0&125
-\end{array}\right],
+\end{bmatrix},
 \qquad
 \xi=
-\left[\begin{array}{c}
+\begin{bmatrix}
 -500\\
 -25\\
 -403.32\\
-\hline
 138.23\\
 42.08\\
 732.17\\
-\hline
 361.77\\
 -17.08
-\end{array}\right].
+\end{bmatrix}.
 ```
 
 The rows and columns for $\mathbf{x}_2$ and $L_1$ are still zero. The graph now has a loop through $\mathbf{x}_0$, $\mathbf{x}_1$, and $L_0$, which is where the redundancy and the inconsistency come from.
@@ -641,35 +629,33 @@ The robot drives $1.5\text{ m}$ forward without turning, so $z=(1.5,\ 0,\ 0)$, w
 
 ```math
 J=
-\left[\begin{array}{ccc|ccc}
+\begin{bmatrix}
 0&-1&0&0&1&0\\
 1&0&-1.5&-1&0&0\\
 0&0&-1&0&0&1
-\end{array}\right],
+\end{bmatrix},
 ```
 
 ```math
 \Delta\Omega=
-\left[\begin{array}{ccc|ccc}
+\begin{bmatrix}
 100&0&-150&-100&0&0\\
 0&100&0&0&-100&0\\
 -150&0&625&150&0&-400\\
-\hline
 -100&0&150&100&0&0\\
 0&-100&0&0&100&0\\
 0&0&-400&0&0&400
-\end{array}\right],
+\end{bmatrix},
 \qquad
 \Delta\xi=
-\left[\begin{array}{c}
+\begin{bmatrix}
 -235.62\\
 -150\\
 353.43\\
-\hline
 235.62\\
 150\\
 0
-\end{array}\right].
+\end{bmatrix}.
 ```
 
 Compare this with Step 3. There, the motion was along the world $x$ axis, so the lever arm coupled the heading to $y$ (the $200$ entries). Here the robot is facing $+y$, so the motion is along the world $y$ axis, and the lever arm couples the heading to $x$ instead (the $-150$ entries).
@@ -682,32 +668,30 @@ At $\mathbf{x}_2$, the robot sees a new landmark $L_1$ at $1.5\text{ m}$ forward
 z=\begin{bmatrix}1.5\\1.5\end{bmatrix},
 \qquad
 J=
-\left[\begin{array}{ccc|cc}
+\begin{bmatrix}
 0&-1&1.5&0&1\\
 1&0&-1.5&-1&0
-\end{array}\right],
+\end{bmatrix},
 ```
 
 ```math
 \Delta\Omega=
-\left[\begin{array}{ccc|cc}
+\begin{bmatrix}
 25&0&-37.5&-25&0\\
 0&100&-150&0&-100\\
 -37.5&-150&281.25&37.5&150\\
-\hline
 -25&0&37.5&25&0\\
 0&-100&150&0&100
-\end{array}\right],
+\end{bmatrix},
 \qquad
 \Delta\xi=
-\left[\begin{array}{c}
+\begin{bmatrix}
 -21.40\\
 -385.62\\
 610.54\\
-\hline
 21.40\\
 385.62
-\end{array}\right].
+\end{bmatrix}.
 ```
 
 Its rows and columns are for $\mathbf{x}_2$ and $L_1$. Since $L_1$ was initialized from this very observation, there is no residual to correct yet. As with $L_1$ in the 1D example, a landmark seen once has no redundancy.
@@ -718,48 +702,40 @@ Adding everything together gives the complete $13\times13$ system, ordered $(\ma
 
 ```math
 \Omega=
-\left[\begin{array}{ccc|ccc|ccc|cc|cc}
+\begin{bmatrix}
 300&0&-100&-100&0&0&0&0&0&-100&0&0&0\\
 0&225&275&0&-100&0&0&0&0&0&-25&0&0\\
 -100&275&1525&0&-200&-400&0&0&0&100&-75&0&0\\
-\hline
 -100&0&0&225&0&-175&-100&0&0&-25&0&0&0\\
 0&-100&-200&0&300&100&0&-100&0&0&-100&0&0\\
 0&0&-400&-175&100&1150&150&0&-400&25&-100&0&0\\
-\hline
 0&0&0&-100&0&150&125&0&-37.5&0&0&-25&0\\
 0&0&0&0&-100&0&0&200&-150&0&0&0&-100\\
 0&0&0&0&0&-400&-37.5&-150&681.25&0&0&37.5&150\\
-\hline
 -100&0&100&-25&0&25&0&0&0&125&0&0&0\\
 0&-25&-75&0&-100&-100&0&0&0&0&125&0&0\\
-\hline
 0&0&0&0&0&0&-25&0&37.5&0&0&25&0\\
 0&0&0&0&0&0&0&-100&150&0&0&0&100
-\end{array}\right],
+\end{bmatrix},
 ```
 
 ```math
 \xi=
-\left[\begin{array}{c}
+\begin{bmatrix}
 -500\\
 -25\\
 -403.32\\
-\hline
 -97.39\\
 -107.92\\
 1085.60\\
-\hline
 214.21\\
 -235.62\\
 610.54\\
-\hline
 361.77\\
 -17.08\\
-\hline
 21.40\\
 385.62
-\end{array}\right].
+\end{bmatrix}.
 ```
 
 The block pattern is the same as in the 1D example: a chain of couplings along the trajectory ($\mathbf{x}_0$–$\mathbf{x}_1$–$\mathbf{x}_2$), links from each pose to the landmarks it saw ($\mathbf{x}_0$ and $\mathbf{x}_1$ to $L_0$, and $\mathbf{x}_2$ to $L_1$), and nothing between $L_0$ and $L_1$, because no pose saw both.

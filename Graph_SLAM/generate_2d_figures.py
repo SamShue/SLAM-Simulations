@@ -467,15 +467,9 @@ def latex_matrix(m, digits=3):
 
 
 def latex_partitioned(m, row_splits=(), col_splits=(), digits=3):
-    """Matrix with optional separator lines before the given row / column indices."""
-    m = np.atleast_2d(np.asarray(m, dtype=float))
-    spec = "".join(("|" if c in col_splits else "") + "c" for c in range(m.shape[1]))
-    lines = []
-    for r in range(m.shape[0]):
-        if r in row_splits:
-            lines.append("\\hline")
-        lines.append("&".join(latex_cell(v, digits) for v in m[r]) + ("\\\\" if r < m.shape[0] - 1 else ""))
-    return "\\left[\\begin{array}{" + spec + "}\n" + "\n".join(lines) + "\n\\end{array}\\right]"
+    """Plain bmatrix. GitHub's math renderer rejects \\hline and \\left[...\\right] arrays, so the
+    split arguments are accepted for readability of the callers but intentionally not drawn."""
+    return latex_matrix(m, digits)
 
 
 def stacked(pieces):
