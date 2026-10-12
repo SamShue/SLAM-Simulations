@@ -168,13 +168,108 @@ def draw_system(ax, omega, xi, prev_omega, prev_xi):
     ax.text(4.2, n + 1.35, "non-zero", color=TEXT, fontsize=13, va="center")
 
 
+WORLD_FILES = [
+    "step1_world_1d.png",
+    "step2_world_1d.png",
+    "step3_world_1d.png",
+    "step4_world_1d.png",
+    "step5_world_1d.png",
+]
+CONFLICT = "#ff8a80"
+
+
+def star_marker():
+    pts = []
+    for k in range(8):
+        ang = np.pi / 2 + k * np.pi / 4
+        r = 1.0 if k % 2 == 0 else 0.27
+        pts.append((r * np.cos(ang), r * np.sin(ang)))
+    return pts
+
+
+def draw_world(fig, title, odoms, obs, positions, conflict_note):
+    """Literal 1D view: every node sits at its measured position on one metre axis."""
+    ax = fig.add_axes([0.02, 0.02, 0.96, 0.84])
+    ax.set_facecolor(BG)
+    ax.set_xlim(-1.9, 6.1)
+    ax.set_ylim(-5.0, 6.8)
+    ax.axis("off")
+
+    ax.plot([-0.5, 5.8], [0, 0], color=TEXT, linewidth=2.2, zorder=2)
+    for m in np.arange(-0.5, 5.81, 0.5):
+        major = abs(m - round(m)) < 1e-9
+        ax.plot([m, m], [0, 0.14 if major else 0.08], color=TEXT, linewidth=1.5, zorder=2)
+        if major:
+            ax.text(m, -0.1, f"{m:g}", color=TEXT, fontsize=13, ha="center", va="top")
+    ax.text(5.95, 0.0, "m", color=TEXT, fontsize=14, ha="left", va="center")
+
+    def guide(x, y0, y1, color):
+        ax.plot([x, x], [y0, y1], color=color, linewidth=1.4, linestyle=(0, (2, 3)), zorder=1)
+
+    for name, x in positions.items():
+        if name.startswith("x"):
+            ax.plot([x], [0.42], marker=">", markersize=24, markerfacecolor=BG, markeredgecolor=TEXT,
+                    markeredgewidth=2.4, zorder=4)
+            if name == "x0":
+                ax.plot([x - 0.02], [0.42], "o", color=TEXT, markersize=5, zorder=5)
+            ax.text(x, 0.95, LABELS[IDX[name]], color=TEXT, fontsize=20, ha="center", va="bottom",
+                    bbox=dict(facecolor=BG, edgecolor="none", pad=1.5), zorder=6)
+        else:
+            guide(x, 0.0, 1.8, OBS)
+            ax.plot([x], [2.0], marker=star_marker(), markersize=28, markerfacecolor=BG,
+                    markeredgecolor=TEXT, markeredgewidth=2.4, zorder=4)
+            ax.text(x, 2.55, LABELS[IDX[name]], color=TEXT, fontsize=20, ha="center", va="bottom",
+                    bbox=dict(facecolor=BG, edgecolor="none", pad=1.5), zorder=6)
+
+    # prior pin under x0
+    ax.text(-0.15, -0.95, r"prior: $x_0=0$", color=ODOM, fontsize=14, ha="right", va="center")
+    guide(0.0, 0.0, -0.95, ODOM)
+
+    for k, (a, b, z) in enumerate(odoms):
+        y = -1.75 - 0.8 * k
+        x0, x1 = positions[a], positions[b]
+        guide(x0, 0.0, y, ODOM)
+        guide(x1, 0.0, y, ODOM)
+        ax.annotate("", xy=(x1, y), xytext=(x0, y),
+                    arrowprops=dict(arrowstyle="-|>", color=ODOM, lw=3, shrinkA=0, shrinkB=0,
+                                    mutation_scale=22), zorder=3)
+        ax.text((x0 + x1) / 2, y - 0.12, rf"odometry: ${b[0]}_{b[1]}-{a[0]}_{a[1]}={z:.2f}$",
+                color=TEXT, fontsize=14, ha="center", va="top",
+                bbox=dict(facecolor=BG, edgecolor="none", pad=1.5), zorder=6)
+
+    for k, (a, b, z, end, conflict) in enumerate(obs):
+        y = 3.6 + 0.8 * k
+        x0 = positions[a]
+        color = CONFLICT if conflict else OBS
+        guide(x0, 0.4, y, color)
+        guide(end, 0.0 if conflict else 2.3, y, color)
+        if conflict:
+            ax.plot([end, end], [0, 0.3], color=CONFLICT, linewidth=3.5, zorder=3)
+        ax.annotate("", xy=(end, y), xytext=(x0, y),
+                    arrowprops=dict(arrowstyle="-|>", color=color, lw=3, shrinkA=0, shrinkB=0,
+                                    mutation_scale=22), zorder=3)
+        ax.text((x0 + end) / 2, y + 0.12, rf"sees: ${b[0]}_{b[1]}-{a[0]}_{a[1]}={z:.2f}$",
+                color=TEXT, fontsize=14, ha="center", va="bottom",
+                bbox=dict(facecolor=BG, edgecolor="none", pad=1.5), zorder=6)
+
+    if conflict_note:
+        ax.text(5.95, -4.6, conflict_note, color=CONFLICT, fontsize=14, ha="right", va="center")
+
+    fig.text(0.5, 0.955, title, color=TEXT, fontsize=24, ha="center", va="center")
+    fig.text(0.5, 0.905, "1D world view: every pose and landmark placed on one line at the position its "
+             "measurements imply", color=GRID, fontsize=14, ha="center", va="center")
+
+
 def main():
     os.makedirs(OUT_DIR, exist_ok=True)
     omega = np.zeros((7, 7))
     xi = np.zeros(7)
     nodes, edges = [], []
+    positions = {"x0": 0.0}
+    odoms, obs = [], []
+    conflict_note = ""
 
-    for (title, measurements), fname in zip(STEPS, FILES):
+    for (title, measurements), fname, world_fname in zip(STEPS, FILES, WORLD_FILES):
         prev_omega, prev_xi = omega.copy(), xi.copy()
         for kind, a, b, z, w in measurements:
             add_measurement(omega, xi, kind, a, b, z, w)
@@ -183,6 +278,20 @@ def main():
                     nodes.append(name)
             if kind != "prior":
                 edges.append((kind, a, b))
+            if kind == "odom":
+                positions[b] = positions[a] + z
+                odoms.append((a, b, z))
+            elif kind == "obs":
+                end = positions[a] + z
+                conflict = b in positions
+                if not conflict:
+                    positions[b] = end
+                else:
+                    gap = abs(end - positions[b])
+                    conflict_note = (f"{b[0]}{b[1]} placed at {positions[b]:.2f} m from x0 but "
+                                     f"{end:.2f} m from x1: {gap:.2f} m disagreement")
+                obs.append((a, b, z, end, conflict))
+        conflict_note_fig = conflict_note.replace("L0", "$L_0$").replace("x0", "$x_0$").replace("x1", "$x_1$")
 
         fig = plt.figure(figsize=(16, 6.6), facecolor=BG)
         fig.text(0.5, 0.955, title, color=TEXT, fontsize=24, ha="center", va="center")
@@ -191,10 +300,15 @@ def main():
         fig.savefig(os.path.join(OUT_DIR, fname), dpi=140, facecolor=BG)
         plt.close(fig)
 
+        fig = plt.figure(figsize=(16, 7.4), facecolor=BG)
+        draw_world(fig, title, odoms, obs, positions, conflict_note_fig)
+        fig.savefig(os.path.join(OUT_DIR, world_fname), dpi=140, facecolor=BG)
+        plt.close(fig)
+
     expected_xi = np.array([-161.25, -1.25, -68.75, 72.0, 72.5, 38.75, 48.0])
     assert np.allclose(xi, expected_xi), xi
     assert omega[2, 2] == 225 and omega[3, 3] == 125 and omega[4, 4] == 50
-    print("Generated", len(FILES), "figures in", OUT_DIR)
+    print("Generated", len(FILES) + len(WORLD_FILES), "figures in", OUT_DIR)
 
 
 if __name__ == "__main__":
