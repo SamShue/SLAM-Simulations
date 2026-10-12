@@ -37,21 +37,13 @@ POS = {
 }
 
 # (kind, i, j, z, weight): kind "prior" fixes a variable, others are v_j - v_i = z.
+# One list of measurements per step; the figures carry no titles (the Markdown has the headings).
 STEPS = [
-    ("Step 1: Anchor the first pose", [("prior", "x0", None, 0.0, 100.0)]),
-    ("Step 2: Observe landmark $L_0$ from $x_0$", [("obs", "x0", "L0", 2.05, 25.0)]),
-    (
-        "Step 3: Move to $x_1$ and observe $L_0$ again",
-        [("odom", "x0", "x1", 1.10, 100.0), ("obs", "x1", "L0", 0.85, 25.0)],
-    ),
-    (
-        "Step 4: Move to $x_2$ and observe new landmark $L_1$",
-        [("odom", "x1", "x2", 0.90, 100.0), ("obs", "x2", "L1", 1.55, 25.0)],
-    ),
-    (
-        "Step 5: Move to $x_3$ and observe new landmark $L_2$",
-        [("odom", "x2", "x3", 1.20, 100.0), ("obs", "x3", "L2", 1.92, 25.0)],
-    ),
+    [("prior", "x0", None, 0.0, 1.0)],
+    [("obs", "x0", "L0", 2.05, 1.0)],
+    [("odom", "x0", "x1", 1.10, 1.0), ("obs", "x1", "L0", 0.85, 1.0)],
+    [("odom", "x1", "x2", 0.90, 1.0), ("obs", "x2", "L1", 1.55, 1.0)],
+    [("odom", "x2", "x3", 1.20, 1.0), ("obs", "x3", "L2", 1.92, 1.0)],
 ]
 FILES = [
     "step1_anchor.png",
@@ -176,6 +168,7 @@ WORLD_FILES = [
     "step5_world_1d.png",
 ]
 CONFLICT = "#ff8a80"
+SOLUTION_FILE = "solution_world_1d.png"
 
 
 def star_marker():
@@ -256,6 +249,39 @@ def draw_world(fig, odoms, obs, positions, conflict_note):
         ax.text(5.95, -4.6, conflict_note, color=CONFLICT, fontsize=14, ha="right", va="center")
 
 
+def draw_solution(fig, mu):
+    """Number line showing the solved estimate of every pose and landmark."""
+    ax = fig.add_axes([0.02, 0.02, 0.96, 0.96])
+    ax.set_facecolor(BG)
+    ax.set_xlim(-1.9, 6.1)
+    ax.set_ylim(-0.9, 3.6)
+    ax.axis("off")
+
+    ax.plot([-0.5, 5.8], [0, 0], color=TEXT, linewidth=2.2, zorder=2)
+    for m in np.arange(-0.5, 5.81, 0.5):
+        major = abs(m - round(m)) < 1e-9
+        ax.plot([m, m], [0, 0.14 if major else 0.08], color=TEXT, linewidth=1.5, zorder=2)
+        if major:
+            ax.text(m, -0.1, f"{m:g}", color=TEXT, fontsize=13, ha="center", va="top")
+    ax.text(5.95, 0.0, "m", color=TEXT, fontsize=14, ha="left", va="center")
+
+    for name, value in zip(NAMES, mu):
+        label = rf"{LABELS[IDX[name]][:-1]}={value:.3f}$"
+        if name.startswith("x"):
+            ax.plot([value], [0.42], marker=">", markersize=24, markerfacecolor=BG,
+                    markeredgecolor=TEXT, markeredgewidth=2.4, zorder=4)
+            if name == "x0":
+                ax.plot([value - 0.02], [0.42], "o", color=TEXT, markersize=5, zorder=5)
+            ax.text(value, 0.95, label, color=TEXT, fontsize=16, ha="center", va="bottom",
+                    bbox=dict(facecolor=BG, edgecolor="none", pad=1.5), zorder=6)
+        else:
+            ax.plot([value, value], [0.0, 1.8], color=OBS, linewidth=1.4, linestyle=(0, (2, 3)), zorder=1)
+            ax.plot([value], [2.0], marker=star_marker(), markersize=28, markerfacecolor=BG,
+                    markeredgecolor=TEXT, markeredgewidth=2.4, zorder=4)
+            ax.text(value, 2.55, label, color=TEXT, fontsize=16, ha="center", va="bottom",
+                    bbox=dict(facecolor=BG, edgecolor="none", pad=1.5), zorder=6)
+
+
 def main():
     os.makedirs(OUT_DIR, exist_ok=True)
     omega = np.zeros((7, 7))
@@ -265,7 +291,7 @@ def main():
     odoms, obs = [], []
     conflict_note = ""
 
-    for (_, measurements), fname, world_fname in zip(STEPS, FILES, WORLD_FILES):
+    for measurements, fname, world_fname in zip(STEPS, FILES, WORLD_FILES):
         prev_omega, prev_xi = omega.copy(), xi.copy()
         for kind, a, b, z, w in measurements:
             add_measurement(omega, xi, kind, a, b, z, w)
@@ -300,10 +326,19 @@ def main():
         fig.savefig(os.path.join(OUT_DIR, world_fname), dpi=140, facecolor=BG)
         plt.close(fig)
 
-    expected_xi = np.array([-161.25, -1.25, -68.75, 72.0, 72.5, 38.75, 48.0])
+    expected_xi = np.array([-3.15, -0.65, -1.85, -0.72, 2.9, 1.55, 1.92])
     assert np.allclose(xi, expected_xi), xi
-    assert omega[2, 2] == 225 and omega[3, 3] == 125 and omega[4, 4] == 50
-    print("Generated", len(FILES) + len(WORLD_FILES), "figures in", OUT_DIR)
+    assert np.allclose(np.diag(omega), [3, 3, 3, 2, 2, 1, 1]), np.diag(omega)
+
+    mu = np.linalg.solve(omega, xi)
+    expected_mu = np.array([0.0, 1.1333, 2.0333, 3.2333, 2.0167, 3.5833, 5.1533])
+    assert np.allclose(mu, expected_mu, atol=5e-4), mu
+    fig = plt.figure(figsize=(16, 4.4), facecolor=BG)
+    draw_solution(fig, mu)
+    fig.savefig(os.path.join(OUT_DIR, SOLUTION_FILE), dpi=140, facecolor=BG)
+    plt.close(fig)
+
+    print("Generated", len(FILES) + len(WORLD_FILES) + 1, "figures in", OUT_DIR)
 
 
 if __name__ == "__main__":
