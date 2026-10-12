@@ -783,3 +783,9 @@ This is the 2D version of weighted least squares. The noise matrices say which d
 | Solving | once | solve, relinearize, repeat |
 
 The graph, the sparsity, the idea of summing contributions into $\Omega$ and $\xi$, and the weighted least-squares solution are all unchanged. Only the size of each piece, and the need to account for the heading, are new.
+
+---
+
+## Next: Loop Closure and Efficient Solving
+
+These examples were small and had no loops, so a chain of odometry never contradicted itself. [Loop Closure in GraphSLAM](graphslam_loop_closure.md) adds a loop, shows how a single closure corrects accumulated drift across the whole trajectory, and then [Solving the System Efficiently](graphslam_sparse_solvers.md) shows how to solve the larger system by exploiting its sparse structure.
