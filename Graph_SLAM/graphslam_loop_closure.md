@@ -215,24 +215,6 @@ In this scene, the drift happens to be almost along that circle. The dead-reckon
 
 How much a loop closure helps depends on how many of the pose's degrees of freedom it constrains, and in which directions. A second simultaneous landmark, or one landmark together with a heading measurement, can constrain all three, as the side note below shows.
 
-> **Side note: would measuring bearing to the landmark help?**
->
-> Not in this example, because the observation already contains it. We observe the landmark as a (forward, left) position in the robot's frame, and that is the same information as a range and a bearing: for $\mathbf x_8$'s observation $z=(1.98,\ 1.53)$, the range is $2.50\text{ m}$ and the bearing is $37.7^\circ$. Converting between the two forms changes the function $h$ and its Jacobians, and the noise matrix is usually written in range and bearing instead of forward and left. It does not add information. A sensor that gives a range and a bearing still produces only **two** equations for a pose with **three** unknowns.
->
-> The limit here is the number of equations, not the precision of the measurement. Making the $L_0$ closure $100$ times more heavily weighted leaves the error at $\mathbf x_8$ at $0.52\text{ m}$ (from $0.51\text{ m}$), because the drift lies along the unconstrained direction.
->
-> What does help is a **third independent equation** on the same pose:
->
-> | Extra information at $\mathbf x_8$ | Position error at $\mathbf x_8$ |
-> |---|---|
-> | None (only $L_0$ observed) | $0.51\text{ m}$ |
-> | Also observe $L_1$ | $0.45\text{ m}$ |
-> | Also a heading measurement (a compass, $\sigma=0.05\text{ rad}\approx2.9^\circ$, reading off by $0.01\text{ rad}$) | $0.15\text{ m}$ |
->
-> The heading measurement is only a few lines of code to add: it is a measurement of the single variable $\theta_8$, so its Jacobian has one non-zero entry. Observing $L_1$ helps much less than the heading, because $L_1$ was mapped from poses that had already drifted. A second landmark only pins $\mathbf x_8$ down relative to the map, and the map is only as good as the poses it was built from. Landmarks first seen early in the trajectory are the useful ones for a loop closure, as $L_0$ was.
->
-> This is a larger point about sensors. A sensor that measures bearing **to several landmarks at once**, as many real sensors do, gives several equations per pose and constrains a pose much better than the single landmark here.
-
 ---
 
 ## Things to Watch For
