@@ -201,11 +201,11 @@ This is also a loop closure, and it adds edges between $\mathbf x_8$ and a landm
 | Solved with the place-recognition closure | 0.02 |
 | Solved after re-observing $L_0$ | 0.51 |
 
-Here is the error at every pose, in the same format and on the same axes as the chart in Step 3. The place-recognition closure from before is repeated in blue for comparison:
+Here is the error at every pose, in the same format and on the same axes as the chart in Step 3. The gray "no loop closure" line and the blue place-recognition closure line are repeated from that chart for comparison:
 
-![Two charts of error against pose, using the same axes as the earlier chart. For dead reckoning and for the solution where x8 re-observes L0, position and heading error both grow steadily along the path, and the two curves are close together, with the landmark closure only slightly lower. With the place-recognition closure, both errors stay small at every pose.](images/loop_error_landmark.png)
+![Two charts of error against pose, using the same axes as the earlier chart. Dead reckoning, the solution with no loop closure, and the solution where x8 re-observes L0 all grow steadily along the path and lie close together. With the place-recognition closure, both position and heading error stay small at every pose.](images/loop_error_landmark.png)
 
-The landmark closure only trims the error slightly, and the improvement is visible at every pose: the heading error at $\mathbf x_8$ falls from $12.0^\circ$ to $11.1^\circ$, compared with $0.7^\circ$ for the place-recognition closure. The correction is still spread along the trajectory, as it was before. There is simply very little correction to spread.
+The landmark closure (yellow) stays with the gray line and the red dead-reckoning line: at $\mathbf x_8$ the position error is $0.51\text{ m}$ against $0.54\text{ m}$ with no closure, and the heading error is $11.1^\circ$ against $11.4^\circ$. The place-recognition closure reaches $0.02\text{ m}$ and $0.7^\circ$. The landmark closure is only slightly better than having no closure at all, so there is very little correction to spread along the trajectory.
 
 The reason is that one landmark observation is only **two** equations, while a pose has **three** unknowns $(x,\ y,\ \theta)$. It cannot pin down the pose by itself. Any pose on the circle around the landmark, with a matching heading, sees the landmark in the same place in its own frame:
 

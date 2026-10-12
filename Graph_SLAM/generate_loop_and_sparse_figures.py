@@ -519,7 +519,7 @@ def main():
     solved_landmark = M.solve(mu0, M.WITH_LANDMARK_CLOSURE)[-1]
     make_error_chart([("dead reckoning", CONFLICT, mu0, "o"), ("solved, no loop closure", TRUTH, solved_local, "s"),
                       ("solved, with loop closure", ODOM, solved_pose, "D")], "loop_error.png")
-    make_error_chart([("dead reckoning", CONFLICT, mu0, "o"),
+    make_error_chart([("dead reckoning", CONFLICT, mu0, "o"), ("solved, no loop closure", TRUTH, solved_local, "s"),
                       ("solved, $x_8$ re-observes $L_0$", OBS, solved_landmark, "^"),
                       ("solved, place-recognition closure", ODOM, solved_pose, "D")], "loop_error_landmark.png")
     make_system_figure(M.LOCAL, [0], mu0, "loop_system_local.png")
