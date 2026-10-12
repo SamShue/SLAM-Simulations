@@ -1,5 +1,19 @@
 # 1D GraphSLAM Example
 
+## Introduction
+
+GraphSLAM is a graph-based approach to **simultaneous localization and mapping (SLAM)**. It estimates both the robot's poses over time and the positions of landmarks in the environment. Each pose and landmark is represented as a node in a graph, while sensor observations and motion measurements become constraints, or edges, between those nodes.
+
+Together, these constraints provide a complete SLAM solution: the robot trajectory and the map are solved as one connected estimation problem. Odometry relates successive poses, landmark observations relate poses to landmarks, and repeated observations create the redundancy needed to detect inconsistent measurements and distribute error across the trajectory.
+
+GraphSLAM is typically an **offline, batch solver**. Rather than estimating only the current pose from the previous estimate, it considers all poses and measurements collected over the entire time history at once. When a later observation reveals that an earlier pose or landmark estimate was inaccurate, the solution can adjust the earlier poses, later poses, and landmarks together. This global optimization generally produces a more consistent map and trajectory, at the cost of storing and solving a larger system.
+
+This example introduces those ideas in one dimension, where the equations can be written explicitly and the information matrix can be inspected directly. The same graph structure extends to practical two- and three-dimensional SLAM systems, where the constraints are usually nonlinear and are solved through repeated linearization and optimization.
+
+---
+
+## 1D Example
+
 Consider a robot moving along a straight line. We will estimate four robot poses and three landmark positions.
 
 The unknown state is
@@ -19,8 +33,8 @@ L_2
 
 where:
 
-- \(x_0,x_1,x_2,x_3\) are robot poses.
-- \(L_0,L_1,L_2\) are landmark positions.
+- $x_0,x_1,x_2,x_3$ are robot poses.
+- $L_0,L_1,L_2$ are landmark positions.
 
 The GraphSLAM problem is written in information form as
 
@@ -30,9 +44,9 @@ The GraphSLAM problem is written in information form as
 
 where:
 
-- \(\mu\) contains the unknown node values.
-- \(\Omega\) is the **information matrix**, describing which variables are constrained together and how strongly.
-- \(\xi\) is the **information vector**, containing the measurement values after they have been incorporated into the system.
+- $\mu$ contains the unknown node values.
+- $\Omega$ is the **information matrix**, describing which variables are constrained together and how strongly.
+- $\xi$ is the **information vector**, containing the measurement values after they have been incorporated into the system.
 
 ---
 
@@ -50,9 +64,9 @@ For example,
 x_1-x_0=1.1
 ```
 
-means odometry measured a motion of \(1.1\text{ m}\).
+means odometry measured a motion of $1.1\text{ m}$.
 
-If the measurement has standard deviation \(\sigma\), its information weight is
+If the measurement has standard deviation $\sigma$, its information weight is
 
 ```math
 w=\frac{1}{\sigma^2}.
@@ -70,7 +84,7 @@ w
 \end{bmatrix}
 ```
 
-to the rows and columns associated with \(v_i\) and \(v_j\), and
+to the rows and columns associated with $v_i$ and $v_j$, and
 
 ```math
 \Delta\xi
@@ -84,9 +98,9 @@ z
 
 So:
 
-> \(\Omega\) records the relationship and confidence.
+> $\Omega$ records the relationship and confidence.
 
-> \(\xi\) records the numerical measurement information.
+> $\xi$ records the numerical measurement information.
 
 ---
 
@@ -152,7 +166,7 @@ and
 \end{bmatrix}.
 ```
 
-The value \(100\) is **not** the pose.
+The value $100$ is **not** the pose.
 
 It means:
 
@@ -162,9 +176,9 @@ It means:
 
 ---
 
-## Step 2: Observe Landmark \(L_0\)
+## Step 2: Observe Landmark $L_0$
 
-At \(x_0\), the robot measures
+At $x_0$, the robot measures
 
 ```math
 L_0-x_0=2.05.
@@ -198,7 +212,7 @@ The measurement contributes
 \end{bmatrix}
 ```
 
-to \(x_0\) and \(L_0\).
+to $x_0$ and $L_0$.
 
 It also contributes
 
@@ -248,7 +262,7 @@ and
 
 ---
 
-## Step 3: Move to \(x_1\)
+## Step 3: Move to $x_1$
 
 Odometry measures
 
@@ -278,7 +292,7 @@ This adds
 \end{bmatrix}
 ```
 
-between \(x_0\) and \(x_1\), and
+between $x_0$ and $x_1$, and
 
 ```math
 100
@@ -293,7 +307,7 @@ between \(x_0\) and \(x_1\), and
 \end{bmatrix}.
 ```
 
-Now suppose the robot sees \(L_0\) again:
+Now suppose the robot sees $L_0$ again:
 
 ```math
 L_0-x_1=0.85.
@@ -359,7 +373,7 @@ and
 
 ---
 
-## Step 4: Move to \(x_2\)
+## Step 4: Move to $x_2$
 
 Suppose odometry reports
 
@@ -373,7 +387,7 @@ with
 \sigma=0.1,\qquad w=100.
 ```
 
-At \(x_2\), the robot observes a new landmark:
+At $x_2$, the robot observes a new landmark:
 
 ```math
 L_1-x_2=1.55
@@ -415,13 +429,13 @@ and
 \end{bmatrix}.
 ```
 
-Notice that \(L_1\) has only been seen once.
+Notice that $L_1$ has only been seen once.
 
-That observation places \(L_1\) relative to \(x_2\), but it does not yet provide redundancy.
+That observation places $L_1$ relative to $x_2$, but it does not yet provide redundancy.
 
 ---
 
-## Step 5: Move to \(x_3\)
+## Step 5: Move to $x_3$
 
 Suppose odometry reports
 
@@ -435,7 +449,7 @@ again with
 \sigma=0.1,\qquad w=100.
 ```
 
-At \(x_3\), the robot observes
+At $x_3$, the robot observes
 
 ```math
 L_2-x_3=1.92
@@ -500,7 +514,7 @@ L_2
 \end{bmatrix}.
 ```
 
-Each row and column of \(\Omega\) corresponds to one state variable.
+Each row and column of $\Omega$ corresponds to one state variable.
 
 A nonzero off-diagonal value means:
 
@@ -514,7 +528,7 @@ For example,
 \Omega_{01}=-100
 ```
 
-exists because odometry connects \(x_0\) and \(x_1\).
+exists because odometry connects $x_0$ and $x_1$.
 
 Similarly,
 
@@ -522,7 +536,7 @@ Similarly,
 \Omega_{04}=-25
 ```
 
-exists because \(x_0\) observed \(L_0\).
+exists because $x_0$ observed $L_0$.
 
 ---
 
@@ -544,9 +558,9 @@ is mathematically valid, but in practice we normally solve the linear system dir
 
 That is, the computer asks:
 
-> What values of \(\mu\) make \(\Omega\mu\) equal to \(\xi\)?
+> What values of $\mu$ make $\Omega\mu$ equal to $\xi$?
 
-It does not normally calculate \(\Omega^{-1}\) explicitly.
+It does not normally calculate $\Omega^{-1}$ explicitly.
 
 A sparse linear solver might instead use Cholesky or another factorization.
 
@@ -558,7 +572,7 @@ For a small classroom example, however, computing
 
 would give the same result, aside from numerical precision.
 
-The treatment of noise is already contained in \(\Omega\) and \(\xi\).
+The treatment of noise is already contained in $\Omega$ and $\xi$.
 
 ---
 
@@ -580,7 +594,7 @@ w=\frac{1}{\sigma^2}
 
 is large.
 
-Its contribution to \(\Omega\) and \(\xi\) is therefore large.
+Its contribution to $\Omega$ and $\xi$ is therefore large.
 
 A noisy measurement has a lower weight and has less influence on the final estimate.
 
@@ -602,13 +616,13 @@ The graph currently looks roughly like
                  L1     L2
 ```
 
-\(L_0\) is observed twice.
+$L_0$ is observed twice.
 
-That gives two independent ways of relating \(x_0\), \(x_1\), and \(L_0\).
+That gives two independent ways of relating $x_0$, $x_1$, and $L_0$.
 
 Therefore, if the measurements disagree, GraphSLAM can detect the inconsistency and redistribute the error.
 
-But \(L_1\) and \(L_2\) are each observed only once.
+But $L_1$ and $L_2$ are each observed only once.
 
 For example,
 
@@ -616,7 +630,7 @@ For example,
 L_2-x_3=1.92
 ```
 
-can always be satisfied simply by moving \(L_2\) along with \(x_3\).
+can always be satisfied simply by moving $L_2$ along with $x_3$.
 
 So a landmark seen only once does not independently correct pose drift.
 
