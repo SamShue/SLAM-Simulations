@@ -1,6 +1,6 @@
 """Generate the per-step GraphSLAM figures used by graphslam_1d_example.md.
 
-Run from anywhere:  python Graph_SLAM/generate_step_figures.py
+Run from anywhere:  python Graph_SLAM/Documents/images/generate_step_figures.py
 """
 import os
 
@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Polygon, Rectangle
 
-OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Documents", "images")
+OUT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 BG = "#1b262c"
 TEXT = "#ffffff"

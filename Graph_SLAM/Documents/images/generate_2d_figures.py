@@ -1,7 +1,7 @@
 """Generate the figures (and the numbers) used by graphslam_2d_example.md.
 
-Run from anywhere:  python Graph_SLAM/generate_2d_figures.py
-Print the LaTeX blocks quoted in the Markdown:  python Graph_SLAM/generate_2d_figures.py --latex
+Run from anywhere:  python Graph_SLAM/Documents/images/generate_2d_figures.py
+Print the LaTeX blocks quoted in the Markdown:  python Graph_SLAM/Documents/images/generate_2d_figures.py --latex
 
 State layout: [x0 y0 th0 | x1 y1 th1 | x2 y2 th2 | L0x L0y | L1x L1y]
 Measurements (all expressed in the frame of the observing pose):
@@ -26,7 +26,7 @@ from generate_step_figures import (  # noqa: E402
     BG, CELL_NEW, CELL_ON, CELL_TEXT, CONFLICT, GRID, ODOM, OBS, TEXT, star_marker,
 )
 
-OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Documents", "images")
+OUT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 N_POSES, N_LM = 3, 2
 DIM = 3 * N_POSES + 2 * N_LM

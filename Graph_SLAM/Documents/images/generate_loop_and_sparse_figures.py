@@ -1,7 +1,7 @@
 """Generate the figures (and the numbers) for graphslam_loop_closure.md and graphslam_sparse_solvers.md.
 
-Run from anywhere:  python Graph_SLAM/generate_loop_and_sparse_figures.py
-Print the numbers quoted in the Markdown:  python Graph_SLAM/generate_loop_and_sparse_figures.py --numbers
+Run from anywhere:  python Graph_SLAM/Documents/images/generate_loop_and_sparse_figures.py
+Print the numbers quoted in the Markdown:  python Graph_SLAM/Documents/images/generate_loop_and_sparse_figures.py --numbers
 """
 import os
 import sys
@@ -21,7 +21,7 @@ from generate_step_figures import (  # noqa: E402
     BG, CELL_NEW, CELL_ON, CELL_TEXT, CONFLICT, GRID, ODOM, OBS, TEXT, star_marker,
 )
 
-OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Documents", "images")
+OUT_DIR = os.path.dirname(os.path.abspath(__file__))
 TRUTH = "#8fa3ad"
 
 
