@@ -215,6 +215,18 @@ J=\frac{\partial h}{\partial\mu}\bigg|_{\bar\mu}.
 
 $J$ is the **Jacobian**. It is zero everywhere except in the columns of the nodes involved in the measurement, so we only ever write down the small pieces.
 
+Here is what each symbol in the tangent-line equation means:
+
+- $\mu$ is the **unknown**: the true poses and landmarks that we are solving for.
+- $\bar\mu$ ("mu bar") is our **current guess** for them. It is a specific set of known numbers. In this example, the first $\bar\mu$ is the dead-reckoned estimate that is listed in [The Example](#the-example) below. It stays fixed while we build one linear system.
+- $h(\bar\mu)$ is the measurement that the guess **predicts**. We plug the guess into $h$ and get a number.
+- $J$ is the slope of $h$ at the guess, so it is also a set of known numbers. It is not the derivative of $\mu-\bar\mu$. It is the slope that multiplies it.
+- $\mu-\bar\mu$ is the **correction**: how far the true answer is from our guess. It is the only unknown on the right-hand side.
+
+In words, the equation says that the expected measurement at the true state is the prediction at our guess, plus the slope times how far off the guess is. It is the same as the tangent line of a single-variable function, $f(x)\approx f(a)+f'(a)\,(x-a)$, with $a=\bar\mu$ and $x=\mu$.
+
+Solving the linear system that comes out of this gives a new, better $\mu$. We then use it as the new guess $\bar\mu$, rebuild the system, and repeat, as described at the end of this section.
+
 ### Where the weight comes from
 
 So far we have a measurement $z$ and a straight-line prediction of it. We have not said how much to trust the measurement. That is the job of the **weight** $W$.
