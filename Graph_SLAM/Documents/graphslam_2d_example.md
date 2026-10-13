@@ -121,7 +121,7 @@ y_j-y_i
 \end{bmatrix}.
 ```
 
-> **Why is the rotation matrix transposed?** $R(\theta_i)$ turns a vector written in the robot's frame into the same vector written in the world frame. For example, "one metre forward" is $(1,\ 0)$ in the robot's frame, and $R(\theta_i)\begin{bmatrix}1\\0\end{bmatrix}=(\cos\theta_i,\ \sin\theta_i)$ is that same vector in the world frame.
+> **Why is the rotation matrix transposed?** $R(\theta_i)$ turns a vector written in the robot's frame into the same vector written in the world frame. For example, "one metre forward" is $(1,\ 0)$ in the robot's frame, and applying $R(\theta_i)$ to it gives $(\cos\theta_i,\ \sin\theta_i)$, which is that same vector in the world frame.
 >
 > Here we need the opposite direction. The poses are stored in the world frame, so the offset $(x_j-x_i,\ y_j-y_i)$ is a world-frame vector, but a measurement is expressed in the robot's frame. We have to turn the offset back, by rotating it through $-\theta_i$. The matrix that undoes a rotation is its inverse, and for a rotation matrix the inverse is the transpose, $R(\theta_i)^{-1}=R(\theta_i)^\top=R(-\theta_i)$.
 
