@@ -70,6 +70,14 @@ function [point] = getGoalPoint(currentPose, lineSegBeginPoint, lineSegEndPoint,
                 point = point2;
             end
         end
+
+        if(isempty(point))
+            % The lookahead circle doesn't intersect the segment at all
+            % (e.g. the robot has drifted further than the lookahead
+            % distance off the path). Fall back to steering toward the
+            % end of the segment so the robot can recover.
+            point = lineSegEndPoint;
+        end
     end
     
 end
