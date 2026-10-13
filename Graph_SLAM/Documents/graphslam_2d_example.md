@@ -237,25 +237,9 @@ Recall from the [introduction](graphslam_introduction.md) that GraphSLAM looks f
 \big(z-h(\mu)\big)^\top W\,\big(z-h(\mu)\big).
 ```
 
-The residual $z-h(\mu)$ is the difference between what was measured and what the estimate predicts. The weight $W$ decides how much each part of the residual counts towards the total.
+The residual $z-h(\mu)$ is the difference between what was measured and what the estimate predicts. We square the residual by multiplying it by it's transpose. This make the error larger regardless of wether the residual was positive or negative.
 
-**The structure of this expression.** Call the residual $r=z-h(\mu)$, so the term is $r^\top W r$. This is a very common form in linear algebra, a matrix sandwiched between a vector and its transpose, and it is worth reading carefully.
-
-- **The shapes.** $r$ is a column with one entry per component of the measurement, so $r^\top$ is a row. For a measurement with $m$ components, $W$ is $m\times m$. Multiplying a row, a square matrix, and a column gives a $1\times1$ result: **a single number**. That is what we need, because we are adding up the error of every measurement and looking for the estimate that makes the total smallest.
-- **Without a weight, it is a sum of squares.** If there were no $W$, the expression $r^\top r$ would be $r_1^2+r_2^2+\dots$, the ordinary squared length of the residual. Every component would count equally, whatever its units.
-- **A diagonal $W$ weights each square separately.** For a measurement with two components and $W=\mathrm{diag}(w_1,\ w_2)$, the expression is $r^\top W r=w_1r_1^2+w_2r_2^2$. Each squared residual is multiplied by its own weight. In 1D, there was just one component, and this was $w\,r^2$.
-- **Off-diagonal entries couple the components.** Suppose $W$ is symmetric, with diagonal entries $a$ and $c$ and an off-diagonal entry $b$. Then $r^\top W r=a\,r_1^2+2b\,r_1r_2+c\,r_2^2$. The new cross term $2b\,r_1r_2$ is how the error accounts for components whose noise is correlated. We use diagonal matrices in this example, but nothing about the method requires it.
-- **Squaring makes errors count regardless of sign.** The expression is quadratic in $r$. Doubling a residual makes its error four times as large, and a residual in either direction adds a positive amount. For a valid weight matrix, which is symmetric and positive definite, $r^\top W r$ is never negative, and is zero only when $r=0$. This is why it works as an error.
-
-Here is a small example, using numbers that appear in Step 3 below. A landmark observation has the residual $r=(0.15,\ 0.10)$, and the weight is $W=\mathrm{diag}(100,\ 25)$. Then
-
-```math
-r^\top W r=100\,(0.15)^2+25\,(0.10)^2=2.25+0.25=2.5.
-```
-
-The first component is off by more and has the larger weight, so it contributes nine times as much of the error as the second. Without the weight, $r^\top r$ would be only $0.0325$, and the two components would count in proportion to their squared sizes alone.
-
-Now, back to what the weight means for the measurements themselves.
+A weight term is added in between the squaring operation. The weight $W$ decides how much each part of the residual counts towards the total.
 
 - In 1D, a measurement had a single number $w=1/\sigma^2$. A precise measurement had a large $w$, so its error was punished heavily.
 - A 2D measurement is a vector, with a residual for each component. The weight therefore becomes a matrix, $W=\Sigma^{-1}$, the inverse of the measurement's noise covariance $\Sigma$. A component with a small standard deviation gets a large entry in $W$.
