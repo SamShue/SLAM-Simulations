@@ -132,6 +132,54 @@ L_{k,y}-y_i
 \end{bmatrix}.
 ```
 
+### Writing the landmark observation out
+
+The matrix form is compact, but it hides the individual equations. Let us expand it, one step at a time. First, write out the transposed rotation matrix:
+
+```math
+h_{\text{lm}}(\mathbf{x}_i,L_k)=
+\begin{bmatrix}
+\cos\theta_i&\sin\theta_i\\
+-\sin\theta_i&\cos\theta_i
+\end{bmatrix}
+\begin{bmatrix}
+L_{k,x}-x_i\\
+L_{k,y}-y_i
+\end{bmatrix}.
+```
+
+Then carry out the matrix multiplication. Each row of the rotation matrix multiplies the vector $(L_{k,x}-x_i,\ L_{k,y}-y_i)$, which gives one component of the answer:
+
+```math
+h_{\text{lm}}(\mathbf{x}_i,L_k)=
+\begin{bmatrix}
+\cos\theta_i\,(L_{k,x}-x_i)+\sin\theta_i\,(L_{k,y}-y_i)\\[4pt]
+-\sin\theta_i\,(L_{k,x}-x_i)+\cos\theta_i\,(L_{k,y}-y_i)
+\end{bmatrix}.
+```
+
+There is no matrix left, only two scalar equations in the five variables $x_i,\ y_i,\ \theta_i,\ L_{k,x},\ L_{k,y}$. Each has a simple geometric meaning:
+
+- The first component is **how far ahead** of the robot the landmark is. It is the world-frame offset to the landmark projected onto the direction the robot faces, $(\cos\theta_i,\ \sin\theta_i)$.
+- The second component is **how far to the left**. It is the same offset projected onto the direction to the robot's left, $(-\sin\theta_i,\ \cos\theta_i)$.
+
+As a check, take the pose $\mathbf x_1=(2,\ 0,\ \pi/2)$ from the example below, which faces along $+y$, and the landmark at $(3,\ 1)$. The offset is $(1,\ 1)$, the forward direction is $(0,\ 1)$, and the left direction is $(-1,\ 0)$. So the landmark is $1\text{ m}$ ahead and $-1\text{ m}$ to the left, which is $1\text{ m}$ to the right: $h_{\text{lm}}=(1,\ -1)$.
+
+### Writing odometry out
+
+Odometry expands in the same way. The first two components are the same projection, applied to the offset between the two poses, and the third is the change in heading:
+
+```math
+h_{\text{odom}}(\mathbf{x}_i,\mathbf{x}_j)=
+\begin{bmatrix}
+\cos\theta_i\,(x_j-x_i)+\sin\theta_i\,(y_j-y_i)\\[4pt]
+-\sin\theta_i\,(x_j-x_i)+\cos\theta_i\,(y_j-y_i)\\[4pt]
+\theta_j-\theta_i
+\end{bmatrix}.
+```
+
+These expanded forms are what we differentiate to get the Jacobians in the next section.
+
 > Many sensors report range and bearing instead. The simulation in [SIMULATION_GraphSLAM.m](../SIMULATION_GraphSLAM.m) works that way. Only the function $h$ and its derivatives change. Everything else in this example is identical.
 
 **The prior** simply says $h(\mathbf x_0)=\mathbf x_0$.
@@ -176,42 +224,86 @@ J^\top w z=w\begin{bmatrix}-z\\z\end{bmatrix},
 
 which are exactly the contributions from the 1D Measurement Model.
 
-For reference, here are the Jacobians used below. Let $d=(x_j-x_i,\ y_j-y_i)$ be the position difference between the two poses, and let
+For reference, here are the Jacobians used below. Each row of $J$ holds the derivatives of one scalar component of the expanded $h$ from the previous section, with respect to each variable. The derivatives are simple because $h$ is made of sums and products of a few terms.
+
+To keep the matrices readable, write
 
 ```math
-\frac{\partial R(\theta)^\top}{\partial\theta}=
-\begin{bmatrix}
--\sin\theta&\cos\theta\\
--\cos\theta&-\sin\theta
-\end{bmatrix}.
-```
-
-For odometry, the Jacobian with respect to pose $i$ is $J_i$ and with respect to pose $j$ is $J_j$:
-
-```math
-J_i=
-\begin{bmatrix}
--R(\theta_i)^\top&\dfrac{\partial R(\theta_i)^\top}{\partial\theta_i}\,d\\[8pt]
-0\ \ 0&-1
-\end{bmatrix},
+c=\cos\theta_i,
 \qquad
-J_j=
-\begin{bmatrix}
-R(\theta_i)^\top&0\\
-0\ \ 0&1
-\end{bmatrix}.
+s=\sin\theta_i,
 ```
 
-For a landmark observation, $d=(L_{k,x}-x_i,\ L_{k,y}-y_i)$:
+and let $h_1$ and $h_2$ be the first two components of the expected measurement, which are the **forward** and **left** offsets from the previous section.
+
+### Landmark observation
+
+Start with the two components, with $d_x=L_{k,x}-x_i$ and $d_y=L_{k,y}-y_i$:
+
+```math
+h_1=c\,d_x+s\,d_y,
+\qquad
+h_2=-s\,d_x+c\,d_y.
+```
+
+Differentiate each one with respect to the five variables. For the pose position, $d_x$ and $d_y$ change with $-1$, and for the landmark they change with $+1$. For the heading, $c$ and $s$ change, with $\partial c/\partial\theta_i=-s$ and $\partial s/\partial\theta_i=c$:
+
+```math
+\begin{aligned}
+\frac{\partial h_1}{\partial x_i}&=-c,&
+\frac{\partial h_1}{\partial y_i}&=-s,&
+\frac{\partial h_1}{\partial\theta_i}&=-s\,d_x+c\,d_y=h_2,&
+\frac{\partial h_1}{\partial L_{k,x}}&=c,&
+\frac{\partial h_1}{\partial L_{k,y}}&=s,\\[6pt]
+\frac{\partial h_2}{\partial x_i}&=s,&
+\frac{\partial h_2}{\partial y_i}&=-c,&
+\frac{\partial h_2}{\partial\theta_i}&=-c\,d_x-s\,d_y=-h_1,&
+\frac{\partial h_2}{\partial L_{k,x}}&=-s,&
+\frac{\partial h_2}{\partial L_{k,y}}&=c.
+\end{aligned}
+```
+
+Arranged as matrices, the part for the pose $\mathbf x_i$ and the part for the landmark $L_k$ are
 
 ```math
 J_{\text{pose}}=
 \begin{bmatrix}
--R(\theta_i)^\top&\dfrac{\partial R(\theta_i)^\top}{\partial\theta_i}\,d
+-c&-s&h_2\\
+s&-c&-h_1
 \end{bmatrix},
 \qquad
-J_{L}=R(\theta_i)^\top.
+J_{L}=
+\begin{bmatrix}
+c&s\\
+-s&c
+\end{bmatrix}.
 ```
+
+### Odometry
+
+The first two components of odometry have the same form, with $d_x=x_j-x_i$ and $d_y=y_j-y_i$, and the third is $\theta_j-\theta_i$. Differentiating in the same way gives the part for pose $i$, which is $J_i$, and the part for pose $j$, which is $J_j$:
+
+```math
+J_i=
+\begin{bmatrix}
+-c&-s&h_2\\
+s&-c&-h_1\\
+0&0&-1
+\end{bmatrix},
+\qquad
+J_j=
+\begin{bmatrix}
+c&s&0\\
+-s&c&0\\
+0&0&1
+\end{bmatrix}.
+```
+
+### Reading the Jacobians
+
+- **The position columns are rotations.** In every Jacobian, the entries for position are $\pm c$ and $\pm s$. They convert a change in the world frame into a change in the robot's forward and left directions. They are the rotation matrix $R(\theta_i)^\top$ or its negative, written out. The pose $\mathbf x_j$ and the landmark have $+R(\theta_i)^\top$, and the pose $\mathbf x_i$ has $-R(\theta_i)^\top$.
+- **The heading column is the expected measurement, rotated.** The entries $(h_2,\ -h_1)$ say that if the heading of pose $i$ were wrong by a small angle, the measurement would change in proportion to how far away the thing being measured is. This is the lever arm effect that we will see in the examples. In matrix form this column is the derivative of $R(\theta_i)^\top$ with respect to $\theta_i$, multiplied by the offset $d$.
+- **Heading difference is linear.** The $\pm1$ in the last row of odometry is just $\theta_j-\theta_i$ again.
 
 Because the Jacobians depend on the estimate $\bar\mu$, a single solve is not the final answer. We will solve, move $\bar\mu$ to the new estimate, rebuild $\Omega$ and $\xi$, and repeat.
 
@@ -404,7 +496,7 @@ J=
 \end{bmatrix}.
 ```
 
-The two columns on the right are $R(0)^\top=I$, because the robot is facing along $x$. The third column is $\frac{\partial R^\top}{\partial\theta}d=(1,\ -3)$. It says that if the heading of $\mathbf x_0$ were off by a small angle, the landmark would appear to move, and by more the farther away it is.
+The two columns on the right are $J_L$. The robot is facing along $x$, so $c=1$ and $s=0$, and $J_L=I$. The third column is $(h_2,\ -h_1)=(1,\ -3)$, using the expected measurement $h=(3,\ 1)$. It says that if the heading of $\mathbf x_0$ were off by a small angle, the landmark would appear to move, and by more the farther away it is.
 
 The contribution of this measurement is
 
