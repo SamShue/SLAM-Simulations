@@ -121,6 +121,34 @@ y_j-y_i
 \end{bmatrix}.
 ```
 
+> **Why is the rotation matrix transposed?** $R(\theta_i)$ turns a vector written in the robot's frame into the same vector written in the world frame. For example, "one metre forward" is $(1,\ 0)$ in the robot's frame, and $R(\theta_i)\begin{bmatrix}1\\0\end{bmatrix}=(\cos\theta_i,\ \sin\theta_i)$ is that same vector in the world frame.
+>
+> Here we need the opposite direction. The poses are stored in the world frame, so the offset $(x_j-x_i,\ y_j-y_i)$ is a world-frame vector, but a measurement is expressed in the robot's frame. We have to turn the offset back, by rotating it through $-\theta_i$. The matrix that undoes a rotation is its inverse, and for a rotation matrix the inverse is the transpose, $R(\theta_i)^{-1}=R(\theta_i)^\top=R(-\theta_i)$.
+
+Written out, with the transposed rotation matrix filled in, this is
+
+```math
+h_{\text{odom}}(\mathbf{x}_i,\mathbf{x}_j)=
+\begin{bmatrix}
+\cos\theta_i&\sin\theta_i&0\\
+-\sin\theta_i&\cos\theta_i&0\\
+0&0&1
+\end{bmatrix}
+\begin{bmatrix}
+x_j-x_i\\
+y_j-y_i\\
+\theta_j-\theta_i
+\end{bmatrix}
+=
+\begin{bmatrix}
+\cos\theta_i\,(x_j-x_i)+\sin\theta_i\,(y_j-y_i)\\[4pt]
+-\sin\theta_i\,(x_j-x_i)+\cos\theta_i\,(y_j-y_i)\\[4pt]
+\theta_j-\theta_i
+\end{bmatrix}.
+```
+
+The heading change needs no rotation, which is why the matrix has a $1$ in its last diagonal entry.
+
 **A landmark observation** measures where landmark $k$ is relative to pose $i$, in the robot frame (forward, left):
 
 ```math
@@ -132,9 +160,7 @@ L_{k,y}-y_i
 \end{bmatrix}.
 ```
 
-### Writing the landmark observation out
-
-The matrix form is compact, but it hides the individual equations. Let us expand it, one step at a time. First, write out the transposed rotation matrix:
+The matrix form is compact, but it hides the individual equations, so let us expand it. The landmark observation is the same transform, applied to the offset from the pose to the landmark. Writing out the transposed rotation matrix gives
 
 ```math
 h_{\text{lm}}(\mathbf{x}_i,L_k)=
@@ -148,7 +174,7 @@ L_{k,y}-y_i
 \end{bmatrix}.
 ```
 
-Then carry out the matrix multiplication. Each row of the rotation matrix multiplies the vector $(L_{k,x}-x_i,\ L_{k,y}-y_i)$, which gives one component of the answer:
+Each row of the matrix multiplies the offset vector $(L_{k,x}-x_i,\ L_{k,y}-y_i)$ and gives one component of the answer:
 
 ```math
 h_{\text{lm}}(\mathbf{x}_i,L_k)=
@@ -164,19 +190,6 @@ There is no matrix left, only two scalar equations in the five variables $x_i,\ 
 - The second component is **how far to the left**. It is the same offset projected onto the direction to the robot's left, $(-\sin\theta_i,\ \cos\theta_i)$.
 
 As a check, take the pose $\mathbf x_1=(2,\ 0,\ \pi/2)$ from the example below, which faces along $+y$, and the landmark at $(3,\ 1)$. The offset is $(1,\ 1)$, the forward direction is $(0,\ 1)$, and the left direction is $(-1,\ 0)$. So the landmark is $1\text{ m}$ ahead and $-1\text{ m}$ to the left, which is $1\text{ m}$ to the right: $h_{\text{lm}}=(1,\ -1)$.
-
-### Writing odometry out
-
-Odometry expands in the same way. The first two components are the same projection, applied to the offset between the two poses, and the third is the change in heading:
-
-```math
-h_{\text{odom}}(\mathbf{x}_i,\mathbf{x}_j)=
-\begin{bmatrix}
-\cos\theta_i\,(x_j-x_i)+\sin\theta_i\,(y_j-y_i)\\[4pt]
--\sin\theta_i\,(x_j-x_i)+\cos\theta_i\,(y_j-y_i)\\[4pt]
-\theta_j-\theta_i
-\end{bmatrix}.
-```
 
 These expanded forms are what we differentiate to get the Jacobians in the next section.
 
