@@ -201,6 +201,10 @@ In 1D, the expected measurement was just $h=v_j-v_i$. Here, $h$ contains $R(\the
 
 ## Linearization and the Information Form
 
+The information form $\Omega\mu=\xi$ is a **linear** system. In 1D every measurement was a linear function of the unknowns, $v_j-v_i$, so each one could be added to $\Omega$ and $\xi$ directly. In 2D, the sines and cosines of the headings mean that this is no longer true, and we cannot write a measurement as a fixed matrix multiplying $\mu$.
+
+The way around this is the same trick that is used to approximate any curve with a straight line. Zoomed in far enough, a smooth curve looks flat. If we have a reasonable guess of the poses and landmarks, we can replace each measurement function with its straight-line approximation around that guess. The slope of that line, which says how much the expected measurement changes for a small change in each variable, is the **Jacobian**. Once every measurement has been made linear, the same recipe as in 1D applies, and we get a linear system that we can solve.
+
 Near a current estimate $\bar\mu$, we can approximate the measurement function by its tangent:
 
 ```math
@@ -211,7 +215,45 @@ J=\frac{\partial h}{\partial\mu}\bigg|_{\bar\mu}.
 
 $J$ is the **Jacobian**. It is zero everywhere except in the columns of the nodes involved in the measurement, so we only ever write down the small pieces.
 
-If the measurement is $z$ and its weight is $W$ (introduced below), the contribution to the system is
+### Where the weight comes from
+
+So far we have a measurement $z$ and a straight-line prediction of it. We have not said how much to trust the measurement. That is the job of the **weight** $W$.
+
+Recall from the [introduction](graphslam_introduction.md) that GraphSLAM looks for the $\mu$ that minimizes a total error, with one term for each measurement. For a single measurement, the term is
+
+```math
+\big(z-h(\mu)\big)^\top W\,\big(z-h(\mu)\big).
+```
+
+The residual $z-h(\mu)$ is the difference between what was measured and what the estimate predicts. The weight $W$ decides how much each part of the residual counts towards the total.
+
+- In 1D, a measurement had a single number $w=1/\sigma^2$. A precise measurement had a large $w$, so its error was punished heavily.
+- A 2D measurement is a vector, with a residual for each component. The weight therefore becomes a matrix, $W=\Sigma^{-1}$, the inverse of the measurement's noise covariance $\Sigma$. A component with a small standard deviation gets a large entry in $W$.
+- It also brings components with different units, such as metres and radians, onto a common scale, because each is divided by its own variance.
+
+How to write $W$ for each kind of measurement is explained in Step 1. For now, treat it as a given matrix, with the same size as the measurement, and each measurement has its own.
+
+### From the weighted error to $\Omega$ and $\xi$
+
+Now replace $h$ with its straight-line approximation. The residual becomes
+
+```math
+z-h(\mu)\;\approx\;z-h(\bar\mu)-J\,(\mu-\bar\mu)
+\;=\;\hat z-J\mu,
+\qquad
+\hat z=z-h(\bar\mu)+J\bar\mu.
+```
+
+The error term is now an ordinary quadratic in $\mu$, which can be multiplied out:
+
+```math
+\big(\hat z-J\mu\big)^\top W\,\big(\hat z-J\mu\big)
+=\mu^\top\big(J^\top WJ\big)\,\mu
+-2\,\mu^\top\big(J^\top W\hat z\big)
++\hat z^\top W\hat z.
+```
+
+The smallest value of a quadratic is where its derivative is zero. Differentiating with respect to $\mu$ and setting the result to zero gives $J^\top WJ\,\mu=J^\top W\hat z$, which is a linear equation. Every measurement adds its own error term to the total, and the derivative of a sum is the sum of the derivatives. So the equations of all the measurements add up into one system, $\Omega\mu=\xi$, where $\Omega$ is the sum of every $J^\top WJ$ and $\xi$ is the sum of every $J^\top W\hat z$. This is the contribution of each measurement:
 
 ```math
 \boxed{
@@ -223,7 +265,7 @@ If the measurement is $z$ and its weight is $W$ (introduced below), the contribu
 }
 ```
 
-Here $\hat z$ is the measurement re-expressed around the linearization point. It contains the residual $z-h(\bar\mu)$, which says how far the measurement is from what the current estimate predicts, plus $J\bar\mu$.
+The quantity $\hat z$ is the measurement re-expressed around the linearization point. It contains the residual $z-h(\bar\mu)$, which says how far the measurement is from what the current estimate predicts, plus $J\bar\mu$.
 
 Compare this with 1D. There, $h=v_j-v_i$ is already linear, so $J=[-1\ \ 1]$ and $\hat z=z$. The formulas become
 
