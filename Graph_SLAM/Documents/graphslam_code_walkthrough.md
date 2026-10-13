@@ -98,10 +98,10 @@ Each landmark is observed repeatedly, from poses that are spread over the whole 
 
 ## Phase 2: Solving the Graph
 
-After the drive, the main script makes a single call:
+After the drive, the main script makes a single call. The function receives only the logs and two noise matrices, `Q` and `R`. It does not receive the simulation's parameter struct, so it does not depend on the simulator, and it could be used with logs from any source.
 
 ```matlab
-[optimizedPoses, optimizedLandmarks] = graphSLAM(poseHistory, controlHistory, measurementLog, landmarkEstimates, observedLandmarks, simParams, Q);
+[optimizedPoses, optimizedLandmarks] = graphSLAM(poseHistory, controlHistory, measurementLog, landmarkEstimates, observedLandmarks, Q, R);
 ```
 
 The rest of this document is about what `graphSLAM` does with those logs.
@@ -160,7 +160,7 @@ The measurement functions are nonlinear, so, as in the 2D example, the solver bu
         b = zeros(n, 1);
 ```
 
-At the start of every round the system is reset to zero, and then every constraint adds its contribution. `omega_meas` is the weight of a landmark observation, $W=\Sigma^{-1}$, with $\Sigma$ built from the range and bearing noise in `Q`. In this simulation $W=\mathrm{diag}(400,\ 820.7)$.
+At the start of every round the system is reset to zero, and then every constraint adds its contribution. `omega_meas` is the weight of a landmark observation, $W=\Sigma^{-1}$, with $\Sigma$ built from the range and bearing noise in `Q`, which the main script passes in. In this simulation $W=\mathrm{diag}(400,\ 820.7)$.
 
 #### How the code's variables map to the documents
 
@@ -253,15 +253,23 @@ The third column of $G$ is the "lever arm" from the 2D example: it says how much
 
 #### The weight
 
-The noise has to be described in the space of the residual, which here is pose space. The code uses a diagonal matrix:
+The noise has to be described in the space of the residual, which here is pose space. The main script builds a diagonal covariance matrix `R` for it, next to the matrix `Q` for the range and bearing:
 
 ```matlab
-            posVariance = (simParams.sigma_v_odom*dt)^2;
-            angVariance = (simParams.sigma_w_odom*dt)^2;
-            omega_motion = diag([1/posVariance, 1/posVariance, 1/angVariance]);
+R = diag([simParams.sigma_v_odom^2, simParams.sigma_v_odom^2, simParams.sigma_w_odom^2]);
 ```
 
-That is $W=\mathrm{diag}(4444,\ 4444,\ 328281)$ for this simulation, where $\Delta t=0.1$. The code's comments note that the weight is based on the noise of the **odometry reading**, which is what was logged, and that the noise in the two inputs $v$ and $w$ could in principle be mapped into pose space through the motion model. They explain that this was not done, because $v$ and $w$ span only two of the three dimensions, and that would have made $W$ singular.
+`R` is expressed **per second**: its entries are the variances of the odometry reading's noise (in $\text{m}^2/\text{s}^2$ and $\text{rad}^2/\text{s}^2$). Inside the loop, the function scales it by $\Delta t^2$ to get the covariance of one step, and inverts that to get the weight:
+
+```matlab
+            % The covariance of this step's odometry noise is R scaled by
+            % dt^2, and its information matrix is the inverse of that.
+            omega_motion = inv(R*dt^2);
+```
+
+That is $W=\mathrm{diag}(4444,\ 4444,\ 328281)$ for this simulation, where $\Delta t=0.1$. The scaling is done inside the function, instead of passing a fixed matrix, because $\Delta t$ is part of each logged control, so steps of different lengths each get the right weight.
+
+The main script's comments explain the choice of a diagonal matrix. The weight is based on the noise of the **odometry reading**, which is what was logged. The noise in the two inputs $v$ and $w$ could in principle be mapped into pose space through the motion model, but this was not done, because $v$ and $w$ span only two of the three dimensions, and that would have made $W$ singular.
 
 #### Adding the contribution
 

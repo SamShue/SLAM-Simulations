@@ -55,7 +55,7 @@ costBefore = zeros(numIterations, 1);
 maxStep = zeros(numIterations, 1);
 for iter = 1:numIterations
     [H, b, cost, costMotion] = buildSystem(mu, controlHistory, measurementLog, landmarkNodeOf, ...
-                               numPoses, poseDims, n, omega_meas, simParams);
+                               numPoses, poseDims, n, omega_meas, R);
     if iter == 1
         costMotionFirst = costMotion;
         [hr, hc] = find(H);
@@ -81,7 +81,7 @@ for iter = 1:numIterations
     end
 end
 [~, ~, costAfter] = buildSystem(mu, controlHistory, measurementLog, landmarkNodeOf, ...
-                                numPoses, poseDims, n, omega_meas, simParams);
+                                numPoses, poseDims, n, omega_meas, R);
 
 copyPoses = reshape(mu(1:poseDims), 3, numPoses)';
 copyLandmarks = reshape(mu(poseDims+1:end), 2, numObserved)';
@@ -100,8 +100,7 @@ if ~doExport
 end
 
 % ----- export -----
-posVariance = (simParams.sigma_v_odom*controlHistory(1,3))^2;
-angVariance = (simParams.sigma_w_odom*controlHistory(1,3))^2;
+omegaMotionMatrix = inv(R*controlHistory(1,3)^2);
 data = struct();
 data.seed = seed;
 data.numPoses = numPoses;
@@ -123,7 +122,7 @@ data.sigma_w_odom = simParams.sigma_w_odom;
 data.sigma_r = simParams.sigma_r;
 data.sigma_b = simParams.sigma_b;
 data.dt = simParams.dt_s;
-data.omegaMotion = [1/posVariance, 1/posVariance, 1/angVariance];
+data.omegaMotion = diag(omegaMotionMatrix)';
 data.omegaMeas = diag(omega_meas)';
 data.costBefore = costBefore;
 data.costMotionFirst = costMotionFirst;
@@ -142,7 +141,7 @@ fprintf('Walkthrough data written for seed %d (%d poses, %d unknowns).\n', seed,
 
 % =====================================================================================
 function [H, b, cost, costMotion] = buildSystem(mu, controlHistory, measurementLog, landmarkNodeOf, ...
-                                    numPoses, poseDims, n, omega_meas, simParams)
+                                    numPoses, poseDims, n, omega_meas, R)
 % The loops below are copied from graphSLAM in SIMULATION_GraphSLAM.m. The only addition is the
 % running `cost`, the sum of e'*omega*e over every constraint, which the original does not compute.
 % `costMotion` is the part of it that comes from the motion constraints.
@@ -172,9 +171,7 @@ function [H, b, cost, costMotion] = buildSystem(mu, controlHistory, measurementL
         A = -G;
         B = eye(3);
 
-        posVariance = (simParams.sigma_v_odom*dt)^2;
-        angVariance = (simParams.sigma_w_odom*dt)^2;
-        omega_motion = diag([1/posVariance, 1/posVariance, 1/angVariance]);
+        omega_motion = inv(R*dt^2);
 
         H(idx_t,  idx_t)  = H(idx_t,  idx_t)  + A'*omega_motion*A;
         H(idx_t,  idx_t1) = H(idx_t,  idx_t1) + A'*omega_motion*B;
