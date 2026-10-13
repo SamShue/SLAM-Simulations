@@ -227,7 +227,7 @@ In words, the equation says that the expected measurement at the true state is t
 
 Solving the linear system that comes out of this gives a new, better $\mu$. We then use it as the new guess $\bar\mu$, rebuild the system, and repeat, as described at the end of this section.
 
-### Where the weight comes from
+### Considering measurements and weights
 
 So far we have a measurement $z$ and a straight-line prediction of it. We have not said how much to trust the measurement. That is the job of the **weight** $W$.
 
