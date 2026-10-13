@@ -191,8 +191,6 @@ There is no matrix left, only two scalar equations in the five variables $x_i,\ 
 
 As a check, take the pose $\mathbf x_1=(2,\ 0,\ \pi/2)$ from the example below, which faces along $+y$, and the landmark at $(3,\ 1)$. The offset is $(1,\ 1)$, the forward direction is $(0,\ 1)$, and the left direction is $(-1,\ 0)$. So the landmark is $1\text{ m}$ ahead and $-1\text{ m}$ to the left, which is $1\text{ m}$ to the right: $h_{\text{lm}}=(1,\ -1)$.
 
-These expanded forms are what we differentiate to get the Jacobians in the next section.
-
 > Many sensors report range and bearing instead. The simulation in [SIMULATION_GraphSLAM.m](../SIMULATION_GraphSLAM.m) works that way. Only the function $h$ and its derivatives change. Everything else in this example is identical.
 
 **The prior** simply says $h(\mathbf x_0)=\mathbf x_0$.
@@ -227,7 +225,7 @@ If the measurement is $z$ and its weight is $W$ (introduced below), the contribu
 
 Here $\hat z$ is the measurement re-expressed around the linearization point. It contains the residual $z-h(\bar\mu)$, which says how far the measurement is from what the current estimate predicts, plus $J\bar\mu$.
 
-Compare this with 1D. There, $h=v_j-v_i$ is already linear, so $J=\begin{bmatrix}-1&1\end{bmatrix}$ and $\hat z=z$. The formulas become
+Compare this with 1D. There, $h=v_j-v_i$ is already linear, so $J=[-1\ \ 1]$ and $\hat z=z$. The formulas become
 
 ```math
 J^\top wJ=w\begin{bmatrix}1&-1\\-1&1\end{bmatrix},
@@ -499,7 +497,7 @@ W_{L}=\Sigma_{L}^{-1}=
 
 This weight is defined in the **robot's** frame. The state, however, is in the **world** frame. The Jacobian is what connects them. It is computed from the current estimate of the pose, so the weight that ends up in $\Omega$ depends on where the robot is and which way it is facing.
 
-At the linearization point, $\bar\theta_0=0$ and the landmark is at $d=\bar L_0-\bar p_0=(3,\ 1)$. The expected observation equals the measurement, so $\hat z=J\bar\mu=(3,\ 1)$. The Jacobian $J=\begin{bmatrix}J_{\text{pose}}&J_L\end{bmatrix}$ is
+At the linearization point, $\bar\theta_0=0$ and the landmark is at $d=\bar L_0-\bar p_0=(3,\ 1)$. The expected observation equals the measurement, so $\hat z=J\bar\mu=(3,\ 1)$. The Jacobian $J=[J_{\text{pose}}\ \ J_L]$ is
 
 ```math
 J=
@@ -590,7 +588,7 @@ W_{\text{odom}}=
 \end{bmatrix}.
 ```
 
-At the linearization point, $\bar\theta_0=0$ and $d=\bar p_1-\bar p_0=(2,\ 0)$. The Jacobian $J=\begin{bmatrix}J_0&J_1\end{bmatrix}$ is
+At the linearization point, $\bar\theta_0=0$ and $d=\bar p_1-\bar p_0=(2,\ 0)$. The Jacobian $J=[J_0\ \ J_1]$ is
 
 ```math
 J=
@@ -644,7 +642,7 @@ h(\bar\mu)=R(\pi/2)^\top(\bar L_0-\bar p_1)=
 z-h(\bar\mu)=\begin{bmatrix}0.15\\0.10\end{bmatrix}.
 ```
 
-This residual is the inconsistency, and it makes $\hat z=(-0.4208,\ -2.4708)$ differ from the first observation. The Jacobian $J=\begin{bmatrix}J_{\text{pose}}&J_L\end{bmatrix}$ is
+This residual is the inconsistency, and it makes $\hat z=(-0.4208,\ -2.4708)$ differ from the first observation. The Jacobian $J=[J_{\text{pose}}\ \ J_L]$ is
 
 ```math
 J=
