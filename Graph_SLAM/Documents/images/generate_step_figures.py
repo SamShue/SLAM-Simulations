@@ -40,17 +40,21 @@ POS = {
 # One list of measurements per step; the figures carry no titles (the Markdown has the headings).
 STEPS = [
     [("prior", "x0", None, 0.0, 1.0)],
+    [("odom", "x0", "x1", 1.10, 1.0)],
+    [("odom", "x1", "x2", 0.90, 1.0)],
+    [("odom", "x2", "x3", 1.20, 1.0)],
     [("obs", "x0", "L0", 2.05, 1.0)],
-    [("odom", "x0", "x1", 1.10, 1.0), ("obs", "x1", "L0", 0.85, 1.0)],
-    [("odom", "x1", "x2", 0.90, 1.0), ("obs", "x2", "L1", 1.55, 1.0)],
-    [("odom", "x2", "x3", 1.20, 1.0), ("obs", "x3", "L2", 1.92, 1.0)],
+    [("obs", "x1", "L0", 0.85, 1.0)],
+    [("obs", "x2", "L1", 1.55, 1.0), ("obs", "x3", "L2", 1.92, 1.0)],
 ]
 FILES = [
     "step1_anchor.png",
-    "step2_landmark.png",
-    "step3_move_to_x1.png",
-    "step4_move_to_x2.png",
-    "step5_final.png",
+    "step2_move_to_x1.png",
+    "step3_move_to_x2.png",
+    "step4_move_to_x3.png",
+    "step5_observe_l0.png",
+    "step6_observe_l0_again.png",
+    "step7_final.png",
 ]
 
 
@@ -166,6 +170,8 @@ WORLD_FILES = [
     "step3_world_1d.png",
     "step4_world_1d.png",
     "step5_world_1d.png",
+    "step6_world_1d.png",
+    "step7_world_1d.png",
 ]
 CONFLICT = "#ff8a80"
 SOLUTION_FILE = "solution_world_1d.png"
@@ -291,7 +297,7 @@ def main():
     odoms, obs = [], []
     conflict_note = ""
 
-    for measurements, fname, world_fname in zip(STEPS, FILES, WORLD_FILES):
+    for step, (measurements, fname, world_fname) in enumerate(zip(STEPS, FILES, WORLD_FILES), start=1):
         prev_omega, prev_xi = omega.copy(), xi.copy()
         for kind, a, b, z, w in measurements:
             add_measurement(omega, xi, kind, a, b, z, w)
@@ -314,6 +320,13 @@ def main():
                                      f"{end:.2f} m from x1: {gap:.2f} m disagreement")
                 obs.append((a, b, z, end, conflict))
         conflict_note_fig = conflict_note.replace("L0", "$L_0$").replace("x0", "$x_0$").replace("x1", "$x_1$")
+
+        if step == 4:
+            # Motion only: the pose block is a chain, and solving it reproduces dead reckoning.
+            poses = np.linalg.solve(omega[:4, :4], xi[:4])
+            assert np.allclose(poses, [0.0, 1.10, 2.00, 3.20]), poses
+            assert np.allclose(omega[:4, :4], [[2, -1, 0, 0], [-1, 2, -1, 0], [0, -1, 2, -1], [0, 0, -1, 1]])
+            assert np.allclose(xi[:4], [-1.10, 0.20, -0.30, 1.20]), xi
 
         fig = plt.figure(figsize=(16, 6.0), facecolor=BG)
         draw_graph(fig.add_axes([0.01, 0.02, 0.40, 0.96]), nodes, edges)

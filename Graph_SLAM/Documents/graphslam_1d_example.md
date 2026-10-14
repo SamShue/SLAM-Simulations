@@ -14,6 +14,8 @@ We do it in one dimension. Every pose and every landmark is a single number, so 
 
 Consider a robot moving along a straight line. In this example, we'll say that we've measured four poses of the robot and three landmark positions. 
 
+We will build the system in two passes. First we use **motion only**: the robot drives along the line and odometry links each pose to the next. Then we add **landmark observations**, which tie the poses to the map and, where a landmark is seen more than once, reveal whether the measurements agree. The order is only for teaching. Every measurement is simply added into $\Omega$ and $\xi$, so adding them in a different order gives the same final system.
+
 We can organize these poses and landmarks in a state vector $\mu$.
 
 ```math
@@ -214,7 +216,7 @@ So:
 
 ## Step 1: Anchor the First Pose
 
-Each step begins with a literal **1D world view**. Every pose and landmark is placed on a single metre axis at the position its measurements imply. Blue arrows below the axis are odometry measurements, and yellow arrows above it are landmark observations, each spanning the distance it measures. Landmarks are drawn slightly above the axis only so they do not overlap poses at nearly the same position; the dotted guide lines show where they sit on the axis. A red arrow marks an observation that disagrees with an earlier one.
+Steps 1 to 4 use motion only, and Steps 5 to 7 add landmark observations. Each step begins with a literal **1D world view**. Every pose and landmark is placed on a single metre axis at the position its measurements imply. Blue arrows below the axis are odometry measurements, and yellow arrows above it are landmark observations, each spanning the distance it measures. Landmarks are drawn slightly above the axis only so they do not overlap poses at nearly the same position; the dotted guide lines show where they sit on the axis. A red arrow marks an observation that disagrees with an earlier one.
 
 ![Step 1 on a number line: only the anchored pose x0 at 0 m exists.](images/step1_world_1d.png)
 
@@ -282,9 +284,255 @@ After the 1D view and the math, each step ends with a figure showing the graph o
 
 ---
 
-## Step 2: Observe Landmark $L_0$
+## Step 2: Move to $x_1$
 
-![Step 2 on a number line: from x0 at 0 m, the robot measures landmark L0 at 2.05 m.](images/step2_world_1d.png)
+![Step 2 on a number line: odometry places x1 at 1.10 m.](images/step2_world_1d.png)
+
+The robot drives forward, and odometry measures
+
+```math
+x_1-x_0=1.10.
+```
+
+This is the same measurement used in the measurement model above. It contributes
+
+```math
+\Delta\Omega=
+\begin{bmatrix}
+1&-1\\
+-1&1
+\end{bmatrix}
+```
+
+to $x_0$ and $x_1$, and
+
+```math
+\Delta\xi=
+\begin{bmatrix}
+-1.10\\
+1.10
+\end{bmatrix}
+```
+
+to the information vector.
+
+The prior from Step 1 already contributed $1$ to $\Omega_{00}$, so after adding the odometry, $\Omega_{00}=1+1=2$.
+
+Therefore,
+
+```math
+\Omega=
+\begin{bmatrix}
+2&-1&0&0&0&0&0\\
+-1&1&0&0&0&0&0\\
+0&0&0&0&0&0&0\\
+0&0&0&0&0&0&0\\
+0&0&0&0&0&0&0\\
+0&0&0&0&0&0&0\\
+0&0&0&0&0&0&0
+\end{bmatrix}
+```
+
+and
+
+```math
+\xi=
+\begin{bmatrix}
+-1.10\\
+1.10\\
+0\\
+0\\
+0\\
+0\\
+0
+\end{bmatrix}.
+```
+
+![Step 2: odometry adds an edge between x0 and x1. The matrix gains the two-node coupling, and the information vector picks up the measured motion.](images/step2_move_to_x1.png)
+
+---
+
+## Step 3: Move to $x_2$
+
+![Step 3 on a number line: odometry places x2 at 2.00 m.](images/step3_world_1d.png)
+
+The robot keeps driving, and odometry reports
+
+```math
+x_2-x_1=0.90.
+```
+
+This adds
+
+```math
+\begin{bmatrix}
+1&-1\\
+-1&1
+\end{bmatrix}
+```
+
+between $x_1$ and $x_2$, and
+
+```math
+\begin{bmatrix}
+-0.90\\
+0.90
+\end{bmatrix}
+```
+
+to the information vector.
+
+Now $x_1$ is touched by two measurements, the motion into it and the motion out of it, so its entries accumulate both:
+
+```math
+\Omega_{11}=1+1=2,
+\qquad
+\xi_1=1.10-0.90=0.20.
+```
+
+The $\xi$ entry for $x_1$ is not a measurement by itself. It is the sum of everything that touches $x_1$, and the incoming and outgoing motions pull in opposite directions.
+
+After adding the measurement,
+
+```math
+\Omega=
+\begin{bmatrix}
+2&-1&0&0&0&0&0\\
+-1&2&-1&0&0&0&0\\
+0&-1&1&0&0&0&0\\
+0&0&0&0&0&0&0\\
+0&0&0&0&0&0&0\\
+0&0&0&0&0&0&0\\
+0&0&0&0&0&0&0
+\end{bmatrix}
+```
+
+and
+
+```math
+\xi=
+\begin{bmatrix}
+-1.10\\
+0.20\\
+0.90\\
+0\\
+0\\
+0\\
+0
+\end{bmatrix}.
+```
+
+![Step 3: a second odometry edge extends the chain to x2. The matrix grows along its diagonal, and x1 now has contributions from both neighboring motions.](images/step3_move_to_x2.png)
+
+---
+
+## Step 4: Move to $x_3$
+
+![Step 4 on a number line: odometry places x3 at 3.20 m. The four poses form a chain.](images/step4_world_1d.png)
+
+Finally, odometry reports
+
+```math
+x_3-x_2=1.20.
+```
+
+This adds the same $2\times2$ pattern between $x_2$ and $x_3$, and $\begin{bmatrix}-1.20&1.20\end{bmatrix}^T$ to the information vector. As in Step 3, $x_2$ now has a motion on each side:
+
+```math
+\Omega_{22}=1+1=2,
+\qquad
+\xi_2=0.90-1.20=-0.30.
+```
+
+The system after all the motion is
+
+```math
+\Omega=
+\begin{bmatrix}
+2&-1&0&0&0&0&0\\
+-1&2&-1&0&0&0&0\\
+0&-1&2&-1&0&0&0\\
+0&0&-1&1&0&0&0\\
+0&0&0&0&0&0&0\\
+0&0&0&0&0&0&0\\
+0&0&0&0&0&0&0
+\end{bmatrix}
+```
+
+and
+
+```math
+\xi=
+\begin{bmatrix}
+-1.10\\
+0.20\\
+-0.30\\
+1.20\\
+0\\
+0\\
+0
+\end{bmatrix}.
+```
+
+![Step 4: the graph is a chain x0, x1, x2, x3. The non-zero part of the matrix is a band along the diagonal, because each pose is connected only to its neighbors.](images/step4_move_to_x3.png)
+
+### What Motion Alone Gives Us
+
+No landmark has been observed yet, so the rows and columns for $L_0,L_1,L_2$ are all zero. We can still solve for the poses using the upper-left $4\times4$ block of $\Omega$ and the first four entries of $\xi$:
+
+```math
+\begin{bmatrix}
+2&-1&0&0\\
+-1&2&-1&0\\
+0&-1&2&-1\\
+0&0&-1&1
+\end{bmatrix}
+\begin{bmatrix}
+x_0\\
+x_1\\
+x_2\\
+x_3
+\end{bmatrix}
+=
+\begin{bmatrix}
+-1.10\\
+0.20\\
+-0.30\\
+1.20
+\end{bmatrix}
+\quad\Longrightarrow\quad
+\begin{bmatrix}
+x_0\\
+x_1\\
+x_2\\
+x_3
+\end{bmatrix}
+=
+\begin{bmatrix}
+0.00\\
+1.10\\
+2.00\\
+3.20
+\end{bmatrix}.
+```
+
+This is exactly the world view above: the odometry readings added up one after another, which is **dead reckoning**. Every measurement is satisfied perfectly, so nothing is left to compromise on.
+
+That is also the limitation. A chain has no redundancy. If the odometry readings were each a little too long, nothing in the graph could reveal it, and the error would simply accumulate along the trajectory. To catch inconsistencies, the robot needs a second, independent way to relate its poses. Landmarks provide it.
+
+---
+
+## Adding Landmark Observations
+
+From here on, the robot also senses landmarks. An observation is the same kind of measurement as odometry, $v_j-v_i=z$, except that $v_i$ is a pose and $v_j$ is a landmark. It uses the same $\Delta\Omega$ and $\Delta\xi$, and it adds a new row and column of connections to the graph instead of extending the chain.
+
+The robot made each of these observations from a particular pose while it was driving. We add them after the motion only to keep the story clear.
+
+---
+
+## Step 5: Observe Landmark $L_0$ from $x_0$
+
+![Step 5 on a number line: from x0 at 0 m, the robot measures landmark L0 at 2.05 m.](images/step5_world_1d.png)
 
 At $x_0$, the robot measures
 
@@ -319,10 +567,10 @@ Therefore,
 ```math
 \Omega=
 \begin{bmatrix}
-2&0&0&0&-1&0&0\\
-0&0&0&0&0&0&0\\
-0&0&0&0&0&0&0\\
-0&0&0&0&0&0&0\\
+3&-1&0&0&-1&0&0\\
+-1&2&-1&0&0&0&0\\
+0&-1&2&-1&0&0&0\\
+0&0&-1&1&0&0&0\\
 -1&0&0&0&1&0&0\\
 0&0&0&0&0&0&0\\
 0&0&0&0&0&0&0
@@ -334,51 +582,29 @@ and
 ```math
 \xi=
 \begin{bmatrix}
--2.05\\
-0\\
-0\\
-0\\
+-3.15\\
+0.20\\
+-0.30\\
+1.20\\
 2.05\\
 0\\
 0
 \end{bmatrix}.
 ```
 
-![Step 2: the first landmark observation adds an edge between x0 and L0. The matrix gains the familiar two-node coupling, and the information vector picks up the corresponding measurement term.](images/step2_landmark.png)
+The $x_0$ entries now count three measurements: the prior, the odometry to $x_1$, and this observation. So $\Omega_{00}=3$ and $\xi_0=-1.10-2.05=-3.15$.
+
+![Step 5: the first landmark observation hangs L0 off x0. The matrix gains a coupling between x0 and L0, and the information vector picks up the measurement.](images/step5_observe_l0.png)
+
+At this point the graph is still a tree, so $L_0$ can simply sit wherever $x_0$ says it is. Nothing contradicts it yet.
 
 ---
 
-## Step 3: Move to $x_1$
+## Step 6: Observe $L_0$ Again from $x_1$
 
-![Step 3 on a number line: odometry places x1 at 1.10 m, but its observation puts L0 at 1.95 m while x0 put it at 2.05 m, a 0.10 m disagreement shown in red.](images/step3_world_1d.png)
+![Step 6 on a number line: odometry places x1 at 1.10 m, but its observation puts L0 at 1.95 m while x0 put it at 2.05 m, a 0.10 m disagreement shown in red.](images/step6_world_1d.png)
 
-Odometry measures
-
-```math
-x_1-x_0=1.10.
-```
-
-This adds
-
-```math
-\begin{bmatrix}
-1&-1\\
--1&1
-\end{bmatrix}
-```
-
-between $x_0$ and $x_1$, and
-
-```math
-\begin{bmatrix}
--1.10\\
-1.10
-\end{bmatrix}
-```
-
-to the information vector.
-
-Now suppose the robot sees $L_0$ again:
+After moving to $x_1$, the robot sees $L_0$ again:
 
 ```math
 L_0-x_1=0.85.
@@ -406,15 +632,15 @@ These cannot all be exactly correct.
 
 GraphSLAM will therefore find a compromise.
 
-After adding both measurements,
+The new observation adds $\Delta\Omega$ between $x_1$ and $L_0$ and $\begin{bmatrix}-0.85&0.85\end{bmatrix}^T$ to the information vector. After adding it,
 
 ```math
 \Omega=
 \begin{bmatrix}
 3&-1&0&0&-1&0&0\\
--1&2&0&0&-1&0&0\\
-0&0&0&0&0&0&0\\
-0&0&0&0&0&0&0\\
+-1&3&-1&0&-1&0&0\\
+0&-1&2&-1&0&0&0\\
+0&0&-1&1&0&0&0\\
 -1&-1&0&0&2&0&0\\
 0&0&0&0&0&0&0\\
 0&0&0&0&0&0&0
@@ -427,28 +653,24 @@ and
 \xi=
 \begin{bmatrix}
 -3.15\\
-0.25\\
-0\\
-0\\
+-0.65\\
+-0.30\\
+1.20\\
 2.90\\
 0\\
 0
 \end{bmatrix}.
 ```
 
-![Step 3: odometry plus the second landmark observation create a small loop in the graph. The information matrix now has entries coupling x0, x1, and L0, and the vector reflects the combined motion and landmark information.](images/step3_move_to_x1.png)
+![Step 6: the second observation of L0 closes a small loop through x0, x1, and L0. The information matrix now couples all three, and L0 has two edges.](images/step6_observe_l0_again.png)
+
+The graph now contains a loop: $x_0\to x_1$ by odometry, $x_1\to L_0$ by the second observation, and $L_0\to x_0$ by the first. Before the landmark, the chain had no way to disagree with itself. With the loop, it does.
 
 ---
 
-## Step 4: Move to $x_2$
+## Step 7: Observe New Landmarks $L_1$ and $L_2$
 
-![Step 4 on a number line: odometry places x2 at 2.00 m, and it observes new landmark L1 at 3.55 m.](images/step4_world_1d.png)
-
-Suppose odometry reports
-
-```math
-x_2-x_1=0.90.
-```
+![Step 7 on a number line: from x2 at 2.00 m, the robot observes new landmark L1 at 3.55 m, and from x3 at 3.20 m it observes new landmark L2 at 5.12 m. L0 remains the only landmark with conflicting observations.](images/step7_world_1d.png)
 
 At $x_2$, the robot observes a new landmark:
 
@@ -456,59 +678,13 @@ At $x_2$, the robot observes a new landmark:
 L_1-x_2=1.55.
 ```
 
-After incorporating both,
-
-```math
-\Omega=
-\begin{bmatrix}
-3&-1&0&0&-1&0&0\\
--1&3&-1&0&-1&0&0\\
-0&-1&2&0&0&-1&0\\
-0&0&0&0&0&0&0\\
--1&-1&0&0&2&0&0\\
-0&0&-1&0&0&1&0\\
-0&0&0&0&0&0&0
-\end{bmatrix}
-```
-
-and
-
-```math
-\xi=
-\begin{bmatrix}
--3.15\\
--0.65\\
--0.65\\
-0\\
-2.90\\
-1.55\\
-0
-\end{bmatrix}.
-```
-
-![Step 4: the graph grows to include x2 and the new landmark L1. The sparse matrix develops a second local loop, and the vector accumulates the added odometry and landmark constraints.](images/step4_move_to_x2.png)
-
-Notice that $L_1$ has only been seen once.
-
-That observation places $L_1$ relative to $x_2$, but it does not yet provide redundancy.
-
----
-
-## Step 5: Move to $x_3$
-
-![Step 5 on a number line: odometry places x3 at 3.20 m, and it observes new landmark L2 at 5.12 m. L0 remains the only landmark with conflicting observations.](images/step5_world_1d.png)
-
-Suppose odometry reports
-
-```math
-x_3-x_2=1.20.
-```
-
-At $x_3$, the robot observes
+At $x_3$, it observes another:
 
 ```math
 L_2-x_3=1.92.
 ```
+
+Each observation adds the same $2\times2$ pattern between its pose and landmark, and $\begin{bmatrix}-z&z\end{bmatrix}^T$ to the information vector.
 
 The final system is
 
@@ -544,7 +720,11 @@ and
 }.
 ```
 
-![Step 5: the final graph includes the full trajectory and all landmarks. The structure of Omega reflects the chain of pose-to-pose constraints plus the landmark observations, while xi stores the accumulated information from every measurement.](images/step5_final.png)
+![Step 7: the final graph includes the full trajectory and all landmarks. The structure of Omega reflects the chain of pose-to-pose constraints plus the landmark observations, while xi stores the accumulated information from every measurement.](images/step7_final.png)
+
+Notice that $L_1$ and $L_2$ have each been seen only once.
+
+Those observations place each landmark relative to a single pose, but they do not yet provide redundancy.
 
 ---
 
@@ -660,7 +840,7 @@ L_2
 
 ![The solved estimate on a number line: x0 at 0.000 m, x1 at 1.133 m, x2 at 2.033 m, x3 at 3.233 m, L0 at 2.017 m, L1 at 3.583 m, and L2 at 5.153 m.](images/solution_world_1d.png)
 
-Compare this with the positions implied by dead reckoning, such as $x_1=1.10$ and $L_0=2.05$. Only the loop formed by $x_0$, $x_1$, and $L_0$ contained an inconsistency, so only that part of the map moved much.
+Compare this with the motion-only solution from Step 4, $x_1=1.10$, $x_2=2.00$, and $x_3=3.20$. Only the loop formed by $x_0$, $x_1$, and $L_0$ contained an inconsistency, and that is where the correction was made. The odometry between $x_1$, $x_2$, and $x_3$ was not in conflict with anything, so those poses keep their spacing but shift along with $x_1$, each by $0.033\text{ m}$. The landmarks $L_1$ and $L_2$, which were each seen once, shift with the poses that observed them.
 
 The three measurements in that loop disagreed by $0.10\text{ m}$. The solution spreads that error evenly:
 
@@ -816,7 +996,7 @@ while the landmark observation $L_0-x_1=0.85$ contributes
 \end{bmatrix}.
 ```
 
-The same pattern of rows and columns is filled in as before. Only the amounts change. For example, consider the entries for $x_0$ after the measurements in Steps 1 through 3 have been added. The prior, the odometry to $x_1$, and the observation of $L_0$ each contribute their own weight:
+The same pattern of rows and columns is filled in as before. Only the amounts change. For example, consider the entries for $x_0$ in the final system. The prior, the odometry to $x_1$, and the observation of $L_0$ each contribute their own weight:
 
 ```math
 \Omega_{00}
@@ -838,14 +1018,15 @@ w_{\text{prior}}+w_{\text{odometry}}+w_{\text{landmark}}
 
 Without weights, the same entries were $\Omega_{00}=3$ and $\xi_0=-3.15$.
 
-The entries for $x_1$ show the same effect:
+The entries for $x_1$ show the same effect. It has odometry on both sides and one observation of $L_0$:
 
 ```math
-\Omega_{11}=100+25=125,
+\Omega_{11}=100+100+25=225,
 \qquad
-\xi_1=100(1.10)+25(-0.85)=88.75.
+\xi_1=100(1.10)+100(-0.90)+25(-0.85)=-1.25.
 ```
 
+Without weights, these were $\Omega_{11}=3$ and $\xi_1=-0.65$.
 The odometry coupling $\Omega_{01}=-100$ is now four times stronger than each landmark coupling $\Omega_{04}=\Omega_{14}=-25$. When the solver resolves the disagreement about $L_0$, the more heavily weighted odometry is moved less, and the less trusted landmark observations absorb more of the correction.
 
 ---
