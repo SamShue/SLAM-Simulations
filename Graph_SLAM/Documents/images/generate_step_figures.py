@@ -42,12 +42,12 @@ POS = {
 STEPS = [
     [("prior", "x0", None, 0.0, 1.0)],
     [("odom", "x0", "x1", 1.10, 1.0)],
-    [("obs", "x1", "L0", 0.85, 1.0)],
+    [("obs", "x1", "L0", 1.35, 1.0)],
     [("odom", "x1", "x2", 0.90, 1.0)],
-    [("obs", "x2", "L0", 0.05, 1.0)],
+    [("obs", "x2", "L0", 0.55, 1.0)],
     [("obs", "x2", "L1", 1.55, 1.0)],
     [("odom", "x2", "x3", 1.20, 1.0)],
-    [("obs", "x3", "L2", 1.92, 1.0)],
+    [("obs", "x3", "L2", 1.30, 1.0)],
 ]
 FILES = [
     "step1_anchor.png",
@@ -343,12 +343,12 @@ def main():
         fig.savefig(os.path.join(OUT_DIR, world_fname), dpi=140, facecolor=BG)
         plt.close(fig)
 
-    expected_xi = np.array([-1.10, -0.65, -1.90, -0.72, 0.90, 1.55, 1.92])
+    expected_xi = np.array([-1.10, -1.15, -2.40, -0.10, 1.90, 1.55, 1.30])
     assert np.allclose(xi, expected_xi), xi
     assert np.allclose(np.diag(omega), [2, 3, 4, 2, 2, 1, 1]), np.diag(omega)
 
     mu = np.linalg.solve(omega, xi)
-    expected_mu = np.array([0.0, 1.1000, 1.9667, 3.1667, 1.9833, 3.5167, 5.0867])
+    expected_mu = np.array([0.0, 1.1000, 1.9667, 3.1667, 2.4833, 3.5167, 4.4667])
     assert np.allclose(mu, expected_mu, atol=5e-4), mu
     fig = plt.figure(figsize=(16, 4.4), facecolor=BG)
     draw_solution(fig, mu)

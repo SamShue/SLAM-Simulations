@@ -356,14 +356,14 @@ With only this one measurement, $x_1$ is simply $x_0$ plus the measured motion �
 
 ## Step 3: Observe Landmark $L_0$ from $x_1$
 
-![Step 3 on a number line: from x1 at 1.10 m, the robot measures landmark L0 at 1.95 m.](images/step3_world_1d.png)
+![Step 3 on a number line: from x1 at 1.10 m, the robot measures landmark L0 at 2.45 m.](images/step3_world_1d.png)
 
 An observation uses the same measurement model as odometry, $v_j-v_i=z$, except that $v_i$ is a pose and $v_j$ is a landmark. It contributes the same $\Delta\Omega$ and $\Delta\xi$ as before, but it adds a new row and column to the graph instead of extending the chain.
 
 From $x_1$, the robot measures landmark $L_0$:
 
 ```math
-L_0-x_1=0.85.
+L_0-x_1=1.35.
 ```
 
 It contributes
@@ -381,12 +381,12 @@ to $x_1$ and $L_0$, and
 ```math
 \Delta\xi=
 \begin{bmatrix}
--0.85\\
-0.85
+-1.35\\
+1.35
 \end{bmatrix}.
 ```
 
-The $x_1$ entries now count two measurements: the odometry from $x_0$, and this observation. So $\Omega_{11}=1+1=2$ and $\xi_1=1.10-0.85=0.25$.
+The $x_1$ entries now count two measurements: the odometry from $x_0$, and this observation. So $\Omega_{11}=1+1=2$ and $\xi_1=1.10-1.35=-0.25$.
 
 Therefore,
 
@@ -409,10 +409,10 @@ and
 \xi=
 \begin{bmatrix}
 -1.10\\
-0.25\\
+-0.25\\
 0\\
 0\\
-0.85\\
+1.35\\
 0\\
 0
 \end{bmatrix}.
@@ -452,7 +452,7 @@ between $x_1$ and $x_2$, and
 \end{bmatrix}
 ```
 
-to the information vector. $x_1$ is now touched by three measurements — the odometry from $x_0$, the observation of $L_0$, and this odometry to $x_2$ — so $\Omega_{11}=2+1=3$ and $\xi_1=0.25-0.90=-0.65$.
+to the information vector. $x_1$ is now touched by three measurements — the odometry from $x_0$, the observation of $L_0$, and this odometry to $x_2$ — so $\Omega_{11}=2+1=3$ and $\xi_1=-0.25-0.90=-1.15$.
 
 After adding the measurement,
 
@@ -475,10 +475,10 @@ and
 \xi=
 \begin{bmatrix}
 -1.10\\
--0.65\\
+-1.15\\
 0.90\\
 0\\
-0.85\\
+1.35\\
 0\\
 0
 \end{bmatrix}.
@@ -492,12 +492,12 @@ The graph is still a tree: a chain from $x_0$ to $x_2$, with $L_0$ hanging off $
 
 ## Step 5: Observe $L_0$ Again from $x_2$
 
-![Step 5 on a number line: odometry places x2 at 2.00 m, but its observation puts L0 at 2.05 m while x1 put it at 1.95 m, a 0.10 m disagreement shown in red.](images/step5_world_1d.png)
+![Step 5 on a number line: odometry places x2 at 2.00 m, but its observation puts L0 at 2.55 m while x1 put it at 2.45 m, a 0.10 m disagreement shown in red.](images/step5_world_1d.png)
 
 From $x_2$, the robot sees $L_0$ again:
 
 ```math
-L_0-x_2=0.05.
+L_0-x_2=0.55.
 ```
 
 This is where inconsistency appears.
@@ -507,22 +507,22 @@ The first observation and odometry suggest approximately
 ```math
 L_0-x_2
 =
-0.85-0.90
+1.35-0.90
 =
--0.05,
+0.45,
 ```
 
 but the second landmark observation says
 
 ```math
-0.05.
+0.55.
 ```
 
 These cannot all be exactly correct.
 
 GraphSLAM will therefore find a compromise.
 
-The new observation adds $\Delta\Omega$ between $x_2$ and $L_0$ and $\begin{bmatrix}-0.05&0.05\end{bmatrix}^T$ to the information vector. After adding it,
+The new observation adds $\Delta\Omega$ between $x_2$ and $L_0$ and $\begin{bmatrix}-0.55&0.55\end{bmatrix}^T$ to the information vector. After adding it,
 
 ```math
 \Omega=
@@ -543,10 +543,10 @@ and
 \xi=
 \begin{bmatrix}
 -1.10\\
--0.65\\
-0.85\\
+-1.15\\
+0.35\\
 0\\
-0.90\\
+1.90\\
 0\\
 0
 \end{bmatrix}.
@@ -591,10 +591,10 @@ and
 \xi=
 \begin{bmatrix}
 -1.10\\
--0.65\\
--0.70\\
+-1.15\\
+-1.20\\
 0\\
-0.90\\
+1.90\\
 1.55\\
 0
 \end{bmatrix}.
@@ -616,7 +616,7 @@ Odometry reports
 x_3-x_2=1.20.
 ```
 
-This adds the same $2\times2$ pattern between $x_2$ and $x_3$, and $\begin{bmatrix}-1.20&1.20\end{bmatrix}^T$ to the information vector. $x_2$ is now touched by four measurements — odometry on both sides, and observations of both $L_0$ and $L_1$ — so $\Omega_{22}=3+1=4$ and $\xi_2=-0.70-1.20=-1.90$.
+This adds the same $2\times2$ pattern between $x_2$ and $x_3$, and $\begin{bmatrix}-1.20&1.20\end{bmatrix}^T$ to the information vector. $x_2$ is now touched by four measurements — odometry on both sides, and observations of both $L_0$ and $L_1$ — so $\Omega_{22}=3+1=4$ and $\xi_2=-1.20-1.20=-2.40$.
 
 After adding the measurement,
 
@@ -639,10 +639,10 @@ and
 \xi=
 \begin{bmatrix}
 -1.10\\
--0.65\\
--1.90\\
+-1.15\\
+-2.40\\
 1.20\\
-0.90\\
+1.90\\
 1.55\\
 0
 \end{bmatrix}.
@@ -654,12 +654,12 @@ and
 
 ## Step 8: Observe Landmark $L_2$ from $x_3$
 
-![Step 8 on a number line: from x3 at 3.20 m, the robot observes new landmark L2 at 5.12 m. L0 remains the only landmark with conflicting observations.](images/step8_world_1d.png)
+![Step 8 on a number line: from x3 at 3.20 m, the robot observes new landmark L2 at 4.50 m. L0 remains the only landmark with conflicting observations.](images/step8_world_1d.png)
 
 At $x_3$, the robot observes
 
 ```math
-L_2-x_3=1.92.
+L_2-x_3=1.30.
 ```
 
 The final system is
@@ -686,12 +686,12 @@ and
 \xi=
 \begin{bmatrix}
 -1.10\\
--0.65\\
--1.90\\
--0.72\\
-0.90\\
+-1.15\\
+-2.40\\
+-0.10\\
+1.90\\
 1.55\\
-1.92
+1.30
 \end{bmatrix}
 }.
 ```
@@ -805,14 +805,14 @@ L_2
 1.100\\
 1.967\\
 3.167\\
-1.983\\
+2.483\\
 3.517\\
-5.087
+4.467
 \end{bmatrix}
 }.
 ```
 
-![The solved estimate on a number line: x0 at 0.000 m, x1 at 1.100 m, x2 at 1.967 m, x3 at 3.167 m, L0 at 1.983 m, L1 at 3.517 m, and L2 at 5.087 m.](images/solution_world_1d.png)
+![The solved estimate on a number line: x0 at 0.000 m, x1 at 1.100 m, x2 at 1.967 m, x3 at 3.167 m, L0 at 2.483 m, L1 at 3.517 m, and L2 at 4.467 m.](images/solution_world_1d.png)
 
 Compare this with dead reckoning: chaining the odometry readings alone, ignoring the landmarks entirely, would give $x_1=1.10$, $x_2=2.00$, and $x_3=3.20$. Only the loop formed by $x_1$, $x_2$, and $L_0$ contained an inconsistency, and that is where the correction was made. $x_1$ comes out unchanged from its dead-reckoning value, because it sits right next to the anchored $x_0$ and has nothing else pulling on it from that side. The correction instead falls on $x_2$, and carries through to everything that chains off it: $x_3$, $L_1$, and $L_2$ are each shifted by $0.033\text{ m}$ from where dead reckoning, or a single observation, would have placed them.
 
@@ -821,8 +821,8 @@ The three measurements in that loop disagreed by $0.10\text{ m}$. The solution s
 ```math
 \begin{aligned}
 x_2-x_1&=0.867&&\text{(measured }0.90\text{, off by }-0.033\text{)}\\
-L_0-x_1&=0.883&&\text{(measured }0.85\text{, off by }+0.033\text{)}\\
-L_0-x_2&=0.017&&\text{(measured }0.05\text{, off by }-0.033\text{)}
+L_0-x_1&=1.383&&\text{(measured }1.35\text{, off by }+0.033\text{)}\\
+L_0-x_2&=0.517&&\text{(measured }0.55\text{, off by }-0.033\text{)}
 \end{aligned}
 ```
 
@@ -853,7 +853,7 @@ But $L_1$ and $L_2$ are each observed only once.
 For example,
 
 ```math
-L_2-x_3=1.92
+L_2-x_3=1.30
 ```
 
 can always be satisfied simply by moving $L_2$ along with $x_3$.
@@ -947,7 +947,7 @@ The odometry measurement $x_1-x_0=1.10$ now contributes
 \end{bmatrix},
 ```
 
-while the landmark observation $L_0-x_1=0.85$ contributes
+while the landmark observation $L_0-x_1=1.35$ contributes
 
 ```math
 \Delta\Omega=
@@ -960,13 +960,13 @@ while the landmark observation $L_0-x_1=0.85$ contributes
 \Delta\xi=
 25
 \begin{bmatrix}
--0.85\\
-0.85
+-1.35\\
+1.35
 \end{bmatrix}
 =
 \begin{bmatrix}
--21.25\\
-21.25
+-33.75\\
+33.75
 \end{bmatrix}.
 ```
 
@@ -997,10 +997,10 @@ The entries for $x_1$ show the mix of weight types. It has odometry on both side
 ```math
 \Omega_{11}=100+100+25=225,
 \qquad
-\xi_1=100(1.10)+100(-0.90)+25(-0.85)=-1.25.
+\xi_1=100(1.10)+100(-0.90)+25(-1.35)=-13.75.
 ```
 
-Without weights, these were $\Omega_{11}=3$ and $\xi_1=-0.65$.
+Without weights, these were $\Omega_{11}=3$ and $\xi_1=-1.15$.
 The odometry coupling $\Omega_{01}=-100$ is now four times stronger than each landmark coupling to $L_0$, $\Omega_{14}=\Omega_{24}=-25$. When the solver resolves the disagreement about $L_0$ — a disagreement between $x_1$, $x_2$, and $L_0$ — the more heavily weighted odometry is moved less, and the less trusted landmark observations absorb more of the correction.
 
 ---
