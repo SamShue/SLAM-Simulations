@@ -36,21 +36,69 @@ GraphSLAM is a **back end**. These documents assume that the front end has done 
 GraphSLAM represents the whole problem as a **graph**:
 
 - Each **node** is something we want to estimate: a robot pose at one moment in time, or the position of a landmark.
-- Each **edge** is a measurement that relates two nodes. Odometry connects two successive poses. A landmark observation connects a pose to a landmark.
+- Each **edge** is a measurement that relates two nodes.
+
+That is a fairly abstract description, so it helps to see exactly where each kind of edge comes from:
+
+- **Odometry** reports how the robot moved between two nearby moments in time. It becomes an edge between the pose right before the move and the pose right after it. If the wheels report that the robot moved $1.1\text{ m}$ forward going from pose $x_0$ to pose $x_1$, that measurement becomes an edge linking node $x_0$ to node $x_1$.
+- An **observation** reports where a landmark appears relative to the robot's current pose. It becomes an edge between that pose and that landmark. If a sensor at pose $x_1$ sees a landmark $2.0\text{ m}$ away, that measurement becomes an edge linking node $x_1$ to node $L_0$.
+
+Every odometry reading and every landmark sighting the robot collects becomes one more edge drawn into the graph. Doing this for a whole run produces a graph like this one:
 
 ![A GraphSLAM graph with triangular robot poses connected by a solid trajectory and star-shaped landmarks connected to poses by dashed observation constraints.](images/graphslam-pose-landmark-graph.png)
 
 *Image source: [A Brief Introduction to GraphSLAM](https://shivachandrachary.medium.com/a-brief-introduction-to-graphslam-4204b4fce2f0) by shivachandrachary on Medium.*
 
-In this example graph, the triangles labeled $x_0$ through $x_{18}$ are robot poses at different times, and the stars labeled $m_1$ through $m_5$ are mapped landmarks. Solid edges connect successive poses through motion constraints, while dashed edges show landmark observations. Because observations can connect distant parts of the trajectory through the same landmark, the graph captures information that can correct accumulated drift.
+In this example graph, the triangles labeled $x_0$ through $x_{18}$ are robot poses at different times, and the stars labeled $m_1$ through $m_5$ are mapped landmarks. Solid edges connect successive poses through odometry, while dashed edges show landmark observations. Because observations can connect distant parts of the trajectory through the same landmark, the graph captures information that can correct accumulated drift.
 
 Together, these constraints provide a complete SLAM solution: the robot trajectory and the map are solved as one connected estimation problem. Odometry relates successive poses, landmark observations relate poses to landmarks, and repeated observations create the redundancy needed to detect inconsistent measurements and distribute error across the trajectory.
 
 ---
 
+## From Edges to the Information Form
+
+A graph with hundreds of poses and landmarks is not something we solve by staring at it. Each edge is turned into a few numbers, and those numbers from every edge in the graph are added into two shared quantities:
+
+- The **information matrix** $\Omega$, which records which nodes are connected by a measurement and how strongly.
+- The **information vector** $\xi$, which records the measurement values themselves.
+
+Every node, pose or landmark, owns one row and one column of $\Omega$ and one entry of $\xi$. An edge between node $a$ and node $b$, carrying a measured value $z$ with weight $w$ (how strongly that measurement should be trusted — more on this below), adds
+
+```math
+\Delta\Omega=
+\begin{bmatrix}
+w&-w\\
+-w&w
+\end{bmatrix},
+\qquad
+\Delta\xi=
+\begin{bmatrix}
+-wz\\
+wz
+\end{bmatrix}
+```
+
+to the rows, columns, and entries belonging to $a$ and $b$, and leaves everything else untouched. The odometry edge from $x_0$ to $x_1$ and the observation edge from $x_1$ to $L_0$ introduced above touch $\Omega$ and $\xi$ like this:
+
+![Diagram showing a small graph with one odometry edge from x0 to x1 and one observation edge from x1 to L0 on the left, and an arrow pointing to a 3x3 information matrix Omega and information vector xi on the right. The cells each edge contributes to are highlighted in matching colors, and the x1 row, column, and entry are highlighted in a third color because both edges add to it.](images/intro_measurement_matrix.png)
+
+Node $x_1$ appears in both edges, so its row, its column, and its entry in $\xi$ each receive a contribution from both; the two simply add together. This is the whole mechanism behind building the system: loop over every edge in the graph, and add its small contribution into the rows, columns, and entries of the nodes it connects. Once every edge has been folded in,
+
+```math
+\boxed{\Omega\mu=\xi,}
+```
+
+and solving this single linear system gives the best estimate of every pose and landmark at once.
+
+Notice how little of $\Omega$ the two edges touched: only the rows and columns of $x_0$, $x_1$, and $L_0$. A measurement always involves just two nodes, so no matter how large the graph grows, each edge changes only a handful of entries. A pose connected to just a few others leaves most of $\Omega$ zero. This **sparsity** is what makes it possible to solve very large problems, and the [last document](graphslam_sparse_solvers.md) in the series explains how.
+
+When the measurements are linear functions of the nodes, as they are in 1D, one solve gives the answer. When they are not, as in 2D, where headings appear inside sines and cosines, the problem is **linearized** around the current estimate, solved, and repeated.
+
+---
+
 ## Edges Are Soft Constraints
 
-An edge does not say "$x_1$ is exactly $1.1\text{ m}$ ahead of $x_0$". It says that the measurement **suggests** that, with some uncertainty. When all the measurements are consistent, a solution can satisfy every edge. In practice they never are, and a loop in the graph forces a disagreement.
+Every edge above was written with a weight $w$, without saying what it means. An edge does not say "$x_1$ is exactly $1.1\text{ m}$ ahead of $x_0$". It says that the measurement **suggests** that, with some uncertainty, and the weight is how strongly the system should trust it. When all the measurements are consistent, a solution can satisfy every edge exactly. In practice they never are, and a loop in the graph forces a disagreement.
 
 The solution to this is to make the nodes fit the edges as well as possible. For each measurement $z_k$ we compare it with what the current estimate $\mu$ predicts, $h_k(\mu)$. The difference is the **residual**. Each residual is scaled by how much we trust that measurement, which is its weight $W_k$, and the total is
 
@@ -64,28 +112,7 @@ GraphSLAM finds the poses and landmarks $\mu$ that make $F$ as small as possible
 - A precise measurement has a large weight, so its residual is penalized heavily. The solution is pulled toward it.
 - A noisy measurement has a small weight, so it is allowed to be wrong.
 
-The weights are introduced in the [1D example](graphslam_1d_example.md#weighting-the-measurements) and explained with matrices in the [2D example](graphslam_2d_example.md).
-
----
-
-## The Information Form
-
-There is a convenient way to write and solve this problem. Each measurement contributes a small amount to two quantities that are shared by the whole graph:
-
-- The **information matrix** $\Omega$, which records which nodes are connected by a measurement and how strongly.
-- The **information vector** $\xi$, which records the measurement values themselves.
-
-Adding up the contributions of every edge gives a single linear system,
-
-```math
-\boxed{\Omega\mu=\xi,}
-```
-
-and solving it gives the best estimate of all the poses and landmarks at once.
-
-A measurement involves only two nodes, so it changes only a few entries of $\Omega$ and $\xi$. A pose connected to just a few others leaves most of $\Omega$ zero. This **sparsity** is what makes it possible to solve very large problems, and the [last document](graphslam_sparse_solvers.md) in the series explains how.
-
-When the measurements are linear functions of the nodes, as they are in 1D, one solve gives the answer. When they are not, as in 2D, where headings appear inside sines and cosines, the problem is **linearized** around the current estimate, solved, and repeated.
+This is the same weight $w$ that appeared in $\Omega$ and $\xi$ above: a large $w$ pulls the solution toward that edge's measurement, and a small $w$ lets the solution mostly ignore it. The weights are introduced in the [1D example](graphslam_1d_example.md#weighting-the-measurements) and explained with matrices in the [2D example](graphslam_2d_example.md).
 
 ---
 
