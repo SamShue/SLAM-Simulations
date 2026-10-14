@@ -522,7 +522,17 @@ These cannot all be exactly correct.
 
 GraphSLAM will therefore find a compromise.
 
-The new observation adds $\Delta\Omega$ between $x_2$ and $L_0$ and $\begin{bmatrix}-0.55&0.55\end{bmatrix}^T$ to the information vector. After adding it,
+The new observation adds $\Delta\Omega$ between $x_2$ and $L_0$, and
+
+```math
+\Delta\xi=
+\begin{bmatrix}
+-0.55\\
+0.55
+\end{bmatrix}
+```
+
+to the information vector. After adding it,
 
 ```math
 \Omega=
@@ -568,7 +578,17 @@ Separately, and in its own step, the robot also observes a new landmark from $x_
 L_1-x_2=1.55.
 ```
 
-This adds $\Delta\Omega$ between $x_2$ and $L_1$ and $\begin{bmatrix}-1.55&1.55\end{bmatrix}^T$ to the information vector. We could have folded this into Step 5, since both observations are made from $x_2$, but keeping each measurement in its own step keeps the pattern easy to follow: one new piece of $\Omega$ and $\xi$ at a time.
+This adds $\Delta\Omega$ between $x_2$ and $L_1$, and
+
+```math
+\Delta\xi=
+\begin{bmatrix}
+-1.55\\
+1.55
+\end{bmatrix}
+```
+
+to the information vector. We could have folded this into Step 5, since both observations are made from $x_2$, but keeping each measurement in its own step keeps the pattern easy to follow: one new piece of $\Omega$ and $\xi$ at a time.
 
 After adding it,
 
@@ -616,7 +636,17 @@ Odometry reports
 x_3-x_2=1.20.
 ```
 
-This adds the same $2\times2$ pattern between $x_2$ and $x_3$, and $\begin{bmatrix}-1.20&1.20\end{bmatrix}^T$ to the information vector. $x_2$ is now touched by four measurements — odometry on both sides, and observations of both $L_0$ and $L_1$ — so $\Omega_{22}=3+1=4$ and $\xi_2=-1.20-1.20=-2.40$.
+This adds the same $2\times2$ pattern between $x_2$ and $x_3$, and
+
+```math
+\Delta\xi=
+\begin{bmatrix}
+-1.20\\
+1.20
+\end{bmatrix}
+```
+
+to the information vector. $x_2$ is now touched by four measurements — odometry on both sides, and observations of both $L_0$ and $L_1$ — so $\Omega_{22}=3+1=4$ and $\xi_2=-1.20-1.20=-2.40$.
 
 After adding the measurement,
 
