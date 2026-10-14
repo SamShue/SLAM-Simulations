@@ -264,10 +264,14 @@ That last example is closely related to why this document exists at all. Elsewhe
 
 ## What's Next in This Series
 
-This document covered the simplest possible case: one input ($x$), one output ($y$), and a straight line. Future documents in this series will build on these same ideas to cover:
+This document covered the simplest possible case: one input ($x$), one output ($y$), and a straight line, solved with plain algebra. The [next document](least_squares_linear_algebra.md) in this series rewrites this exact same problem using vectors and matrices instead — a change in notation, not in idea, that scales to any number of inputs and unknowns, and sets up:
 
-- Fitting a line (or curve) when there is more than one input to consider at once.
-- Writing the whole problem using matrices, so that a computer can solve enormous versions of it instantly, no matter how many data points or unknowns are involved.
+- Writing the whole problem as $A\mathbf{x}=\mathbf{b}$, and a concrete case where it has no solution.
+- The **column space** of a matrix, and what it means for $\mathbf{b}$ to lie inside or outside of it.
+- **Projection**, and the normal equations that come from it.
+
+Further documents will build on that to cover:
+
 - Trusting some measurements more than others — **weighted** least squares — so that a precise sensor gets more say than a noisy one.
 - Seeing exactly how these ideas reappear, scaled up, inside GraphSLAM's solver.
 

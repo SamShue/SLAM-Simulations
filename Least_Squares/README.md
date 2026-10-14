@@ -17,8 +17,9 @@ The documents in [Documents/](Documents) are meant to be read in order. Each one
 | Document | What it covers |
 |---|---|
 | [Introduction to Least Squares](Documents/least_squares_introduction.md) | What problem least squares solves, why errors are squared instead of just added up, and the formulas for the best-fit line through a small, hand-worked example |
+| [Least Squares with Linear Algebra](Documents/least_squares_linear_algebra.md) | The same problem written as $A\mathbf{x}=\mathbf{b}$: a concrete case with no exact solution, the column space, projecting onto it, and the normal equations $A^\top A\hat{\mathbf{x}}=A^\top\mathbf{b}$ |
 
-More documents will be added to this series, extending the same idea to multiple inputs, matrix notation, and weighted least squares, the method GraphSLAM itself is built on. See the [GraphSLAM](../Graph_SLAM) folder for that application.
+More documents will be added to this series, extending the same idea to weighted least squares, the method GraphSLAM itself is built on. See the [GraphSLAM](../Graph_SLAM) folder for that application.
 
 ## Regenerating the Figures
 
@@ -26,10 +27,12 @@ The figures in the documents are produced by scripts in [Documents/images/](Docu
 
 ```
 python Least_Squares/Documents/images/generate_intro_figures.py
+python Least_Squares/Documents/images/generate_linear_algebra_figures.py
 ```
 
 | Script | Produces the figures for |
 |---|---|
 | [generate_intro_figures.py](Documents/images/generate_intro_figures.py) | The introduction |
+| [generate_linear_algebra_figures.py](Documents/images/generate_linear_algebra_figures.py) | Least Squares with Linear Algebra |
 
-The script needs NumPy and Matplotlib.
+The scripts need NumPy and Matplotlib.
