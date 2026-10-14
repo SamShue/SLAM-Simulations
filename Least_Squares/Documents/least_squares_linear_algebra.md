@@ -104,10 +104,10 @@ a_1=\begin{bmatrix}-1\\0\\1\end{bmatrix},
 a_2=\begin{bmatrix}1\\1\\1\end{bmatrix}.
 ```
 
-Matrix-vector multiplication has a second meaning that becomes useful here: $A\mathbf{x}$ is exactly the same as $m\,a_1+c\,a_2$ — take $m$ copies of the vector $a_1$, $c$ copies of the vector $a_2$, and add them together.
+Matrix-vector multiplication has a second meaning that becomes useful here: $A\mathbf{x}$ is exactly the same as $m a_1+c a_2$ — take $m$ copies of the vector $a_1$, $c$ copies of the vector $a_2$, and add them together.
 
 ```math
-\boxed{A\mathbf{x}=m\,a_1+c\,a_2}
+\boxed{A\mathbf{x}=m a_1+c a_2}
 ```
 
 ![Two vectors, a1 equal to (-1, 0, 1) and a2 equal to (1, 1, 1), drawn as arrows from the origin at a right angle to each other. A third arrow, a1 plus a2, is built tip to tail: a faint copy of a2 is slid to the tip of a1, and a white arrow is drawn from the origin to where that copy ends.](images/vectors_as_columns.png)
@@ -120,13 +120,13 @@ Each of these vectors lives in three numbers, one per data point — not two num
 
 ## The Column Space: Everywhere A Can Reach
 
-Now imagine trying *every* possible value of $m$ and $c$ — not just the two we found, but every real number, including negatives, fractions, and zero. For each pair $(m,c)$, the combination $m\,a_1+c\,a_2$ lands somewhere. The set of every single point you could possibly land on this way is called the **column space** of $A$.
+Now imagine trying *every* possible value of $m$ and $c$ — not just the two we found, but every real number, including negatives, fractions, and zero. For each pair $(m,c)$, the combination $m a_1+c a_2$ lands somewhere. The set of every single point you could possibly land on this way is called the **column space** of $A$.
 
 Since $a_1$ and $a_2$ point in different directions, stretching and combining them can reach any point on a flat, infinite sheet that passes through the origin and contains both vectors — a plane, sitting inside our three-dimensional measurement space. No matter how hard you try, you can never reach a point that is off of this sheet using only combinations of $a_1$ and $a_2$. The column space is, quite literally, **everywhere $A$ can reach**.
 
 ![The same two vectors a1 and a2, now shown as edges of a flat rectangular blue sheet spanning every combination of the two. The vector b equals (1, 3, 6) is drawn pointing above this sheet, clearly not touching it, with a dot and the label "closest reachable point" marking where the sheet comes nearest to b.](images/column_space_plane.png)
 
-This picture explains, geometrically, exactly why $A\mathbf{x}=\mathbf{b}$ had no solution: solving it means finding some $m,c$ with $m\,a_1+c\,a_2=\mathbf{b}$ — in other words, finding a point *on the sheet* that lands exactly on $\mathbf{b}$. The figure shows $\mathbf{b}=(1,3,6)$ floating above the sheet, not on it. **$A\mathbf{x}=\mathbf{b}$ has a solution exactly when $\mathbf{b}$ lies in the column space of $A$ — and in our example, it doesn't.**
+This picture explains, geometrically, exactly why $A\mathbf{x}=\mathbf{b}$ had no solution: solving it means finding some $m,c$ with $m a_1+c a_2=\mathbf{b}$ — in other words, finding a point *on the sheet* that lands exactly on $\mathbf{b}$. The figure shows $\mathbf{b}=(1,3,6)$ floating above the sheet, not on it. **$A\mathbf{x}=\mathbf{b}$ has a solution exactly when $\mathbf{b}$ lies in the column space of $A$ — and in our example, it doesn't.**
 
 ---
 
@@ -193,7 +193,7 @@ A^\top(\mathbf{b}-A\hat{\mathbf{x}})=\mathbf{0}
 \quad\Longrightarrow\quad
 A^\top\mathbf{b}-A^\top A\hat{\mathbf{x}}=\mathbf{0}
 \quad\Longrightarrow\quad
-\boxed{A^\top A\,\hat{\mathbf{x}}=A^\top\mathbf{b}.}
+\boxed{A^\top A \hat{\mathbf{x}}=A^\top\mathbf{b}.}
 ```
 
 These are called the **normal equations** ("normal" here means perpendicular — the same root as a "normal vector"). This is a brand-new matrix equation, with $A^\top A$ and $A^\top\mathbf{b}$ built entirely from numbers we already have, and it can be solved directly for $\hat{\mathbf{x}}$ whenever $A^\top A$ is invertible — which is true here, since $a_1$ and $a_2$ point in genuinely different directions.
@@ -246,14 +246,14 @@ $A^\top A$ came out **diagonal** — zero in its off-diagonal entries. That happ
 So the best-fit line is $\hat y=2.5t+\frac{10}{3}$. Let's verify this really is the closest point in the column space to $\mathbf{b}$:
 
 ```math
-\hat{\mathbf{b}}=A\hat{\mathbf{x}}=2.5\,a_1+\frac{10}{3}\,a_2=\left(\frac{5}{6},\ \frac{10}{3},\ \frac{35}{6}\right)\approx(0.83,\ 3.33,\ 5.83),
+\hat{\mathbf{b}}=A\hat{\mathbf{x}}=2.5 a_1+\frac{10}{3} a_2=\left(\frac{5}{6},\ \frac{10}{3},\ \frac{35}{6}\right)\approx(0.83,\ 3.33,\ 5.83),
 ```
 
 ```math
 e=\mathbf{b}-\hat{\mathbf{b}}=\left(\frac{1}{6},\ -\frac{1}{3},\ \frac{1}{6}\right).
 ```
 
-Checking the perpendicularity we relied on: $a_1\cdot e=(-1)\!\left(\frac16\right)+0\!\left(-\frac13\right)+1\!\left(\frac16\right)=0$, and $a_2\cdot e=\frac16-\frac13+\frac16=0$. Both exactly zero, as the whole derivation promised. The sum of squared errors is $\|e\|^2=\left(\frac16\right)^2+\left(\frac13\right)^2+\left(\frac16\right)^2=\frac16\approx0.167$ — tiny, confirming this line fits very well.
+Checking the perpendicularity we relied on: $a_1\cdot e=(-1)\left(\frac16\right)+0\left(-\frac13\right)+1\left(\frac16\right)=0$, and $a_2\cdot e=\frac16-\frac13+\frac16=0$. Both exactly zero, as the whole derivation promised. The sum of squared errors is $\|e\|^2=\left(\frac16\right)^2+\left(\frac13\right)^2+\left(\frac16\right)^2=\frac16\approx0.167$ — tiny, confirming this line fits very well.
 
 ![The three points plotted on an ordinary t-y graph, with the best-fit line y equals 2.5t plus 10 over 3 drawn through them. A short dashed segment at t equals 0 shows the one point that doesn't sit exactly on the line.](images/best_fit_linear_algebra.png)
 
@@ -266,7 +266,7 @@ This is the same kind of picture the first document ended on: a line through sca
 For three points and one line, the algebra-only approach from the first document is faster by hand. The payoff of the matrix version is that it doesn't care how big the problem gets. Whether $A$ has $3$ rows or $3$ million, $2$ columns or $200$, the recipe is always the same:
 
 ```math
-A^\top A\,\hat{\mathbf{x}}=A^\top\mathbf{b}
+A^\top A \hat{\mathbf{x}}=A^\top\mathbf{b}
 ```
 
 A computer can build $A^\top A$ and $A^\top\mathbf{b}$ and solve this equation in a fraction of a second, no matter how large $A$ is, using the exact same handful of lines of code every time. That is the entire reason to bother with vectors, column spaces, and projections: they turn "find the best-fitting answer to an enormous pile of inconsistent measurements" into "solve one matrix equation."
@@ -283,7 +283,7 @@ This document rewrote the same line-fitting problem from the first document usin
 - Reading a matrix as a list of column vectors, and $A\mathbf{x}$ as a combination of them.
 - The **column space**: everywhere a matrix can reach.
 - **Projection**: finding the closest reachable point when $\mathbf{b}$ isn't reachable exactly.
-- The **normal equations**, $A^\top A\,\hat{\mathbf{x}}=A^\top\mathbf{b}$, derived from the fact that the error vector is perpendicular to the column space.
+- The **normal equations**, $A^\top A \hat{\mathbf{x}}=A^\top\mathbf{b}$, derived from the fact that the error vector is perpendicular to the column space.
 
 Still to come in this series:
 
