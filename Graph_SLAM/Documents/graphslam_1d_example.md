@@ -64,7 +64,54 @@ For example, suppose the robot moves from pose $x_0$ to $x_1$, and the odometry 
 x_1-x_0=1.1
 ```
 
-That measurement contributes
+This measurement model can be represented as a matrix equation. We can write:
+
+```math
+\begin{bmatrix}
+1&-1\\
+-1&1
+\end{bmatrix}
+\begin{bmatrix}
+v_i\\
+v_j
+\end{bmatrix}
+=
+\begin{bmatrix}
+-z\\
+z
+\end{bmatrix}.
+```
+
+Applying this to our example gives:
+
+```math
+\begin{bmatrix}
+1&-1\\
+-1&1
+\end{bmatrix}
+\begin{bmatrix}
+x_0\\
+x_1
+\end{bmatrix}
+=
+\begin{bmatrix}
+-1.1\\
+1.1
+\end{bmatrix}.
+```
+
+Carrying out the matrix multiplication gives two equations:
+
+```math
+\begin{aligned}
+x_0-x_1&=-1.1\\
+x_1-x_0&=1.1
+\end{aligned}
+```
+
+Notice both rows reduce to the same equation, just with opposite signs — a single relative measurement can only constrain the difference between two nodes, not their absolute values. These two equations demonstrate the relationship between $x_0$ and $x_1$, and this redundant pair is exactly the shape needed to build $\Omega$'s contribution.
+
+This local 2x2 matrix is the piece that gets added into the full $\Omega$ matrix. Recall that $\Omega$ describes how nodes are connected to one another:
 
 ```math
 \Delta\Omega
@@ -75,7 +122,9 @@ That measurement contributes
 \end{bmatrix}
 ```
 
-to the rows and columns associated with $v_i$ and $v_j$, and
+This matrix is applied to the rows and columns associated with $v_i$ and $v_j$.
+
+Additionally, the entries in the $\xi$ vector associated with these nodes are modified using the measurement value:
 
 ```math
 \Delta\xi
