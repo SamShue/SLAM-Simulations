@@ -14,7 +14,7 @@ We do it in one dimension. Every pose and every landmark is a single number, so 
 
 Consider a robot moving along a straight line. In this example, we'll say that we've measured four poses of the robot and three landmark positions. 
 
-We can organize these poses and landmarks in a state vector μ. 
+We can organize these poses and landmarks in a state vector $\mu$.
 
 ```math
 \mu =
@@ -34,6 +34,40 @@ where:
 - $x_0,x_1,x_2,x_3$ are robot poses.
 - $L_0,L_1,L_2$ are landmark positions.
 
+Each entry in this vector represents a node in the graph (this is true only for our 1D example — as more dimensions are introduced in later examples, a single node will be represented by a small collection of entries instead of just one).
+
+Relationships, or edges, between nodes are represented in the $\Omega$ matrix. For this example, $\Omega$ is a $7\times7$ matrix: one row and one column per node.
+
+$\Omega$ describes how nodes are connected and how strongly, but not the literal measured values themselves. An additional vector, $\xi$, is needed for that: it holds the actual measured values (e.g., a distance from odometry between two poses, or a range from LiDAR to a landmark). Each entry of $\xi$ accumulates the measurements between the corresponding node in $\mu$ and every other node it's connected to, so it isn't simply a single measurement, but the sum of every measurement that touches that node. Like $\Omega$, $\xi$ has one entry per node, so it is also 7 elements long.
+
+To make this concrete, suppose the only measurement collected so far says the robot moved $1.1\text{ m}$ from pose $x_0$ to pose $x_1$ (the next section shows exactly how a measurement like this gets folded into $\Omega$ and $\xi$). Since $\mu$ orders the nodes as $x_0,x_1,x_2,x_3,L_0,L_1,L_2$, that single measurement only touches the first two rows, columns, and entries; everything else stays at zero:
+
+```math
+\Omega=
+\begin{bmatrix}
+1&-1&0&0&0&0&0\\
+-1&1&0&0&0&0&0\\
+0&0&0&0&0&0&0\\
+0&0&0&0&0&0&0\\
+0&0&0&0&0&0&0\\
+0&0&0&0&0&0&0\\
+0&0&0&0&0&0&0
+\end{bmatrix}
+\qquad
+\xi=
+\begin{bmatrix}
+-1.1\\
+1.1\\
+0\\
+0\\
+0\\
+0\\
+0
+\end{bmatrix}
+```
+
+Rows and columns $1$ through $7$ correspond, in order, to $x_0,x_1,x_2,x_3,L_0,L_1,L_2$, the same order used in $\mu$. As more measurements are added, more of $\Omega$ and $\xi$ fill in, but most of a large system stays at zero, since any single measurement only ever touches two nodes.
+
 The GraphSLAM problem is written in information form as
 
 ```math
@@ -45,6 +79,8 @@ where:
 - $\mu$ contains the unknown node values.
 - $\Omega$ is the **information matrix**, describing which variables are constrained together and how strongly.
 - $\xi$ is the **information vector**, containing the measurement values after they have been incorporated into the system.
+
+By solving this system, we can determine the unknown values of the state vector. 
 
 ---
 
