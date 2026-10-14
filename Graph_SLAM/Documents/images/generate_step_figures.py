@@ -3,6 +3,7 @@
 Run from anywhere:  python Graph_SLAM/Documents/images/generate_step_figures.py
 """
 import os
+import re
 
 import matplotlib
 
@@ -31,7 +32,7 @@ POS = {
     "x1": (2.0, 0.0),
     "x2": (4.0, 0.0),
     "x3": (6.0, 0.0),
-    "L0": (1.0, 1.7),
+    "L0": (3.0, 1.7),
     "L1": (4.6, -1.7),
     "L2": (6.8, 1.7),
 }
@@ -41,18 +42,22 @@ POS = {
 STEPS = [
     [("prior", "x0", None, 0.0, 1.0)],
     [("odom", "x0", "x1", 1.10, 1.0)],
-    [("obs", "x0", "L0", 2.05, 1.0)],
     [("obs", "x1", "L0", 0.85, 1.0)],
-    [("odom", "x1", "x2", 0.90, 1.0), ("obs", "x2", "L1", 1.55, 1.0)],
-    [("odom", "x2", "x3", 1.20, 1.0), ("obs", "x3", "L2", 1.92, 1.0)],
+    [("odom", "x1", "x2", 0.90, 1.0)],
+    [("obs", "x2", "L0", 0.05, 1.0)],
+    [("obs", "x2", "L1", 1.55, 1.0)],
+    [("odom", "x2", "x3", 1.20, 1.0)],
+    [("obs", "x3", "L2", 1.92, 1.0)],
 ]
 FILES = [
     "step1_anchor.png",
     "step2_move_to_x1.png",
     "step3_observe_l0.png",
-    "step4_observe_l0_again.png",
-    "step5_move_to_x2.png",
-    "step6_move_to_x3.png",
+    "step4_move_to_x2.png",
+    "step5_observe_l0_again.png",
+    "step6_observe_l1.png",
+    "step7_move_to_x3.png",
+    "step8_observe_l2.png",
 ]
 
 
@@ -169,6 +174,8 @@ WORLD_FILES = [
     "step4_world_1d.png",
     "step5_world_1d.png",
     "step6_world_1d.png",
+    "step7_world_1d.png",
+    "step8_world_1d.png",
 ]
 CONFLICT = "#ff8a80"
 SOLUTION_FILE = "solution_world_1d.png"
@@ -292,6 +299,7 @@ def main():
     nodes, edges = [], []
     positions = {"x0": 0.0}
     odoms, obs = [], []
+    first_obs_pose = {}
     conflict_note = ""
 
     for step, (measurements, fname, world_fname) in enumerate(zip(STEPS, FILES, WORLD_FILES), start=1):
@@ -311,12 +319,13 @@ def main():
                 conflict = b in positions
                 if not conflict:
                     positions[b] = end
+                    first_obs_pose[b] = a
                 else:
                     gap = abs(end - positions[b])
-                    conflict_note = (f"{b[0]}{b[1]} placed at {positions[b]:.2f} m from x0 but "
-                                     f"{end:.2f} m from x1: {gap:.2f} m disagreement")
+                    conflict_note = (f"{b[0]}{b[1]} placed at {positions[b]:.2f} m from {first_obs_pose[b]} but "
+                                     f"{end:.2f} m from {a}: {gap:.2f} m disagreement")
                 obs.append((a, b, z, end, conflict))
-        conflict_note_fig = conflict_note.replace("L0", "$L_0$").replace("x0", "$x_0$").replace("x1", "$x_1$")
+        conflict_note_fig = re.sub(r"([xL])(\d+)", r"$\1_\2$", conflict_note)
 
         if step == 2:
             # Motion only so far: a single odometry edge reproduces dead reckoning, with no redundancy to check it.
@@ -334,12 +343,12 @@ def main():
         fig.savefig(os.path.join(OUT_DIR, world_fname), dpi=140, facecolor=BG)
         plt.close(fig)
 
-    expected_xi = np.array([-3.15, -0.65, -1.85, -0.72, 2.9, 1.55, 1.92])
+    expected_xi = np.array([-1.10, -0.65, -1.90, -0.72, 0.90, 1.55, 1.92])
     assert np.allclose(xi, expected_xi), xi
-    assert np.allclose(np.diag(omega), [3, 3, 3, 2, 2, 1, 1]), np.diag(omega)
+    assert np.allclose(np.diag(omega), [2, 3, 4, 2, 2, 1, 1]), np.diag(omega)
 
     mu = np.linalg.solve(omega, xi)
-    expected_mu = np.array([0.0, 1.1333, 2.0333, 3.2333, 2.0167, 3.5833, 5.1533])
+    expected_mu = np.array([0.0, 1.1000, 1.9667, 3.1667, 1.9833, 3.5167, 5.0867])
     assert np.allclose(mu, expected_mu, atol=5e-4), mu
     fig = plt.figure(figsize=(16, 4.4), facecolor=BG)
     draw_solution(fig, mu)
