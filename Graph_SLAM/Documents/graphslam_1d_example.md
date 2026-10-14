@@ -41,18 +41,30 @@ Relationships, or edges, between nodes are represented in the $\Omega$ matrix. F
 ```math
 \Omega=
 \begin{bmatrix}
-x_00&x_01&x_02&x_04&0&0&0\\
--1&1&0&0&0&0&0\\
-0&0&0&0&0&0&0\\
-0&0&0&0&0&0&0\\
-0&0&0&0&0&0&0\\
-0&0&0&0&0&0&0\\
-0&0&0&0&0&0&0
+\omega_{x_0x_0} & \omega_{x_0x_1} & \omega_{x_0x_2} & \omega_{x_0x_3} & \omega_{x_0L_0} & \omega_{x_0L_1} & \omega_{x_0L_2} \\
+\omega_{x_1x_0} & \omega_{x_1x_1} & \omega_{x_1x_2} & \omega_{x_1x_3} & \omega_{x_1L_0} & \omega_{x_1L_1} & \omega_{x_1L_2} \\
+\omega_{x_2x_0} & \omega_{x_2x_1} & \omega_{x_2x_2} & \omega_{x_2x_3} & \omega_{x_2L_0} & \omega_{x_2L_1} & \omega_{x_2L_2} \\
+\omega_{x_3x_0} & \omega_{x_3x_1} & \omega_{x_3x_2} & \omega_{x_3x_3} & \omega_{x_3L_0} & \omega_{x_3L_1} & \omega_{x_3L_2} \\
+\omega_{L_0x_0} & \omega_{L_0x_1} & \omega_{L_0x_2} & \omega_{L_0x_3} & \omega_{L_0L_0} & \omega_{L_0L_1} & \omega_{L_0L_2} \\
+\omega_{L_1x_0} & \omega_{L_1x_1} & \omega_{L_1x_2} & \omega_{L_1x_3} & \omega_{L_1L_0} & \omega_{L_1L_1} & \omega_{L_1L_2} \\
+\omega_{L_2x_0} & \omega_{L_2x_1} & \omega_{L_2x_2} & \omega_{L_2x_3} & \omega_{L_2L_0} & \omega_{L_2L_1} & \omega_{L_2L_2}
 \end{bmatrix}
 \qquad
 ```
 
 $\Omega$ describes how nodes are connected and how strongly, but not the literal measured values themselves. An additional vector, $\xi$, is needed for that: it holds the actual measured values (e.g., a distance from odometry between two poses, or a range from LiDAR to a landmark). 
+```math
+\xi =
+\begin{bmatrix}
+\xi_{x_0}\\
+\xi_{x_1}\\
+\xi_{x_2}\\
+\xi_{x_3}\\
+\xi_{L_0}\\
+\xi_{L_1}\\
+\xi_{L_2}
+\end{bmatrix}
+```
 
 Each entry of $\xi$ accumulates the measurements between the corresponding node in $\mu$ and every other node it's connected to, so it isn't simply a single measurement, but the sum of every measurement that touches that node. Like $\Omega$, $\xi$ has one entry per node, so it is also 7 elements long.
 
