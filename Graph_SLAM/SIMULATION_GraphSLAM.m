@@ -70,6 +70,15 @@ landmarkEstimates = zeros(numLandmarks, 2);
 observedLandmarks = false(numLandmarks, 1);
 Q = diag([simParams.sigma_r^2, simParams.sigma_b^2]);
 
+% Odometry noise for the graph's motion constraints, as a covariance PER SECOND
+% in pose space [x; y; theta]: independent x/y/theta noise. (The two noisy
+% inputs, v and w, only span 2 of these 3 dimensions, so mapping noise through
+% the motion model the way the EKF does would make the information matrix
+% singular.) This reflects the uncertainty in the *odometry reading* logged in
+% controlHistory, not the true motion's actuation noise. graphSLAM multiplies it
+% by dt^2 to get the covariance of one step.
+R = diag([simParams.sigma_v_odom^2, simParams.sigma_v_odom^2, simParams.sigma_w_odom^2]);
+
 % ------------------------------------------------------------------
 % Simulation loop
 % ------------------------------------------------------------------
@@ -148,7 +157,7 @@ end
 % Now that the full trajectory has been driven, build the graph from
 % every logged motion and measurement constraint and solve it.
 % ------------------------------------------------------------------
-[optimizedPoses, optimizedLandmarks] = graphSLAM(poseHistory, controlHistory, measurementLog, landmarkEstimates, observedLandmarks, simParams, Q);
+[optimizedPoses, optimizedLandmarks] = graphSLAM(poseHistory, controlHistory, measurementLog, landmarkEstimates, observedLandmarks, Q, R);
 
 % ---------------- Render final result ----------------
 clf; hold on;
@@ -176,7 +185,7 @@ function [wrapped_rad] = wrapToPi(angle_rad)
     wrapped_rad = mod(angle_rad + pi, 2*pi) - pi;
 end
 
-function [poses, landmarks] = graphSLAM(poseHistory, controlHistory, measurementLog, landmarkEstimates, observedLandmarks, simParams, Q)
+function [poses, landmarks] = graphSLAM(poseHistory, controlHistory, measurementLog, landmarkEstimates, observedLandmarks, Q, R)
 %GRAPHSLAM Batch-optimize a pose/landmark graph with Gauss-Newton
 %   Builds the information matrix H and information vector b describing
 %   every motion constraint (between consecutive poses) and every
@@ -194,8 +203,10 @@ function [poses, landmarks] = graphSLAM(poseHistory, controlHistory, measurement
 %       measurementLog      - Mx4 observations [poseIdx, landmarkId, range, bearing]
 %       landmarkEstimates   - Nx2 naive initial guess for each landmark
 %       observedLandmarks   - Nx1 logical, true for landmarks seen at least once
-%       simParams           - simulation parameters (noise std devs)
 %       Q                   - 2x2 measurement noise covariance [range; bearing]
+%       R                   - 3x3 odometry noise covariance per second of
+%                             motion, in pose space [x; y; theta]. The
+%                             covariance of one step of length dt is R*dt^2.
 %
 %   Outputs:
 %       poses     - Tx3 optimized poses [x,y,theta]
@@ -253,16 +264,9 @@ function [poses, landmarks] = graphSLAM(poseHistory, controlHistory, measurement
             A = -G;      % d(e)/d(pose_t)
             B = eye(3);  % d(e)/d(pose_t+1)
 
-            % Approximate odometry noise directly in pose-space as
-            % independent x/y/theta noise. (The two noisy inputs, v and w,
-            % only span 2 of these 3 dimensions, so mapping noise through
-            % the motion model the way the EKF does would make this
-            % information matrix singular.) This should reflect the
-            % uncertainty in the *odometry reading* logged in
-            % controlHistory, not the true motion's actuation noise.
-            posVariance = (simParams.sigma_v_odom*dt)^2;
-            angVariance = (simParams.sigma_w_odom*dt)^2;
-            omega_motion = diag([1/posVariance, 1/posVariance, 1/angVariance]);
+            % The covariance of this step's odometry noise is R scaled by
+            % dt^2, and its information matrix is the inverse of that.
+            omega_motion = inv(R*dt^2);
 
             H(idx_t,  idx_t)  = H(idx_t,  idx_t)  + A'*omega_motion*A;
             H(idx_t,  idx_t1) = H(idx_t,  idx_t1) + A'*omega_motion*B;

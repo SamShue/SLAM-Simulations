@@ -191,7 +191,7 @@ There is no matrix left, only two scalar equations in the five variables $x_i,\ 
 
 As a check, take the pose $\mathbf x_1=(2,\ 0,\ \pi/2)$ from the example below, which faces along $+y$, and the landmark at $(3,\ 1)$. The offset is $(1,\ 1)$, the forward direction is $(0,\ 1)$, and the left direction is $(-1,\ 0)$. So the landmark is $1\text{ m}$ ahead and $-1\text{ m}$ to the left, which is $1\text{ m}$ to the right: $h_{\text{lm}}=(1,\ -1)$.
 
-> Many sensors report range and bearing instead. The simulation in [SIMULATION_GraphSLAM.m](../SIMULATION_GraphSLAM.m) works that way. Only the function $h$ and its derivatives change. Everything else in this example is identical.
+> Many sensors report range and bearing instead. The simulation in [SIMULATION_GraphSLAM.m](../SIMULATION_GraphSLAM.m) works that way, and [GraphSLAM in Code](graphslam_code_walkthrough.md) shows its range-bearing model and Jacobian. Only the function $h$ and its derivatives change. Everything else in this example is identical.
 
 **The prior** simply says $h(\mathbf x_0)=\mathbf x_0$.
 

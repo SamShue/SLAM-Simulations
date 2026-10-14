@@ -161,5 +161,6 @@ Read them in order. Each one assumes the ones before it.
 | [2D GraphSLAM Example](graphslam_2d_example.md) | Poses with a heading, block matrices, noise matrices, and linearization |
 | [Loop Closure in GraphSLAM](graphslam_loop_closure.md) | How revisiting a place corrects drift across the whole trajectory |
 | [Solving the System Efficiently](graphslam_sparse_solvers.md) | Using the sparsity of $\Omega$: Cholesky factorization, fill-in, and eliminating landmarks |
+| [GraphSLAM in Code](graphslam_code_walkthrough.md) | How the MATLAB simulation in this repository implements all of the above, with listings and figures from a real run |
 
 The next document, the [1D GraphSLAM Example](graphslam_1d_example.md), begins by building the system for a robot on a line.
