@@ -12,9 +12,9 @@ We do it in one dimension. Every pose and every landmark is a single number, so 
 
 ## 1D Example
 
-Consider a robot moving along a straight line. We will estimate four robot poses and three landmark positions.
+Consider a robot moving along a straight line. In this example, we'll say that we've measured four poses of the robot and three landmark positions. 
 
-The unknown state is
+We can organize these poses and landmarks in a state vector μ. 
 
 ```math
 \mu =
@@ -50,19 +50,19 @@ where:
 
 ## Measurement Model
 
-Suppose a sensor measurement says
+The measurement model generates a connection, or edge, between two nodes in the graph from a single sensor reading. A sensor produces a value $z$ that describes the motion or distance between two generic nodes $v_i$ and $v_j$ — this applies equally whether $v_i,v_j$ are two poses (an odometry reading) or a pose and a landmark (an observation reading).
+
+In general, the measurement model is:
 
 ```math
 v_j-v_i=z.
 ```
 
-For example,
+For example, suppose the robot moves from pose $x_0$ to $x_1$, and the odometry sensors measure a motion of $1.1\text{ m}$. Plugging these into the measurement model gives:
 
 ```math
 x_1-x_0=1.1
 ```
-
-means odometry measured a motion of $1.1\text{ m}$.
 
 That measurement contributes
 
