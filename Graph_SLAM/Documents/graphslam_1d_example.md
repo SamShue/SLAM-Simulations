@@ -38,14 +38,10 @@ Each entry in this vector represents a node in the graph (this is true only for 
 
 Relationships, or edges, between nodes are represented in the $\Omega$ matrix. For this example, $\Omega$ is a $7\times7$ matrix: one row and one column per node.
 
-$\Omega$ describes how nodes are connected and how strongly, but not the literal measured values themselves. An additional vector, $\xi$, is needed for that: it holds the actual measured values (e.g., a distance from odometry between two poses, or a range from LiDAR to a landmark). Each entry of $\xi$ accumulates the measurements between the corresponding node in $\mu$ and every other node it's connected to, so it isn't simply a single measurement, but the sum of every measurement that touches that node. Like $\Omega$, $\xi$ has one entry per node, so it is also 7 elements long.
-
-To make this concrete, suppose the only measurement collected so far says the robot moved $1.1\text{ m}$ from pose $x_0$ to pose $x_1$ (the next section shows exactly how a measurement like this gets folded into $\Omega$ and $\xi$). Since $\mu$ orders the nodes as $x_0,x_1,x_2,x_3,L_0,L_1,L_2$, that single measurement only touches the first two rows, columns, and entries; everything else stays at zero:
-
 ```math
 \Omega=
 \begin{bmatrix}
-1&-1&0&0&0&0&0\\
+x_00&x_01&x_02&x_04&0&0&0\\
 -1&1&0&0&0&0&0\\
 0&0&0&0&0&0&0\\
 0&0&0&0&0&0&0\\
@@ -54,19 +50,11 @@ To make this concrete, suppose the only measurement collected so far says the ro
 0&0&0&0&0&0&0
 \end{bmatrix}
 \qquad
-\xi=
-\begin{bmatrix}
--1.1\\
-1.1\\
-0\\
-0\\
-0\\
-0\\
-0
-\end{bmatrix}
 ```
 
-Rows and columns $1$ through $7$ correspond, in order, to $x_0,x_1,x_2,x_3,L_0,L_1,L_2$, the same order used in $\mu$. As more measurements are added, more of $\Omega$ and $\xi$ fill in, but most of a large system stays at zero, since any single measurement only ever touches two nodes.
+$\Omega$ describes how nodes are connected and how strongly, but not the literal measured values themselves. An additional vector, $\xi$, is needed for that: it holds the actual measured values (e.g., a distance from odometry between two poses, or a range from LiDAR to a landmark). 
+
+Each entry of $\xi$ accumulates the measurements between the corresponding node in $\mu$ and every other node it's connected to, so it isn't simply a single measurement, but the sum of every measurement that touches that node. Like $\Omega$, $\xi$ has one entry per node, so it is also 7 elements long.
 
 The GraphSLAM problem is written in information form as
 
@@ -158,7 +146,24 @@ This local 2x2 matrix is the piece that gets added into the full $\Omega$ matrix
 \end{bmatrix}
 ```
 
-This matrix is applied to the rows and columns associated with $v_i$ and $v_j$.
+This matrix is applied to the rows and columns associated with $v_i$ and $v_j$. In the example presented here, assuming $\Omega$ was empty, this $\Delta\Omega$ matrix would modify the $\Omega$ matrix as follows:
+
+```math
+\Omega=
+\begin{bmatrix}
+1&-1&0&0&0&0&0\\
+-1&1&0&0&0&0&0\\
+0&0&0&0&0&0&0\\
+0&0&0&0&0&0&0\\
+0&0&0&0&0&0&0\\
+0&0&0&0&0&0&0\\
+0&0&0&0&0&0&0
+\end{bmatrix}
+\qquad
+```
+
+Rows and columns $1$ through $7$ correspond, in order, to $x_0,x_1,x_2,x_3,L_0,L_1,L_2$, the same order used in $\mu$. As more measurements are added, more of $\Omega$ fill in, but most of a large system stays at zero, since any single measurement only ever touches two nodes.
+
 
 Additionally, the entries in the $\xi$ vector associated with these nodes are modified using the measurement value:
 
@@ -169,6 +174,20 @@ Additionally, the entries in the $\xi$ vector associated with these nodes are mo
 -z\\
 z
 \end{bmatrix}.
+```
+When applied to the $\xi$ vector, it would appear as follows:
+
+```math
+\xi=
+\begin{bmatrix}
+-1.1\\
+1.1\\
+0\\
+0\\
+0\\
+0\\
+0
+\end{bmatrix}
 ```
 
 Every measurement in this example is treated as equally trustworthy, so each one is added with the same strength. We will revisit that assumption in [Weighting the Measurements](#weighting-the-measurements) after the full system has been solved.
