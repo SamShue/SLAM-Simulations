@@ -732,57 +732,6 @@ Notice that $L_2$, like $L_1$, has only been seen once.
 
 ---
 
-## What Does This Matrix Mean?
-
-The state vector is
-
-```math
-\mu=
-\begin{bmatrix}
-x_0\\
-x_1\\
-x_2\\
-x_3\\
-L_0\\
-L_1\\
-L_2
-\end{bmatrix}.
-```
-
-Each row and column of $\Omega$ corresponds to one state variable.
-
-A nonzero off-diagonal value means:
-
-```math
-\boxed{\text{those two variables are connected by a measurement}}
-```
-
-For example,
-
-```math
-\Omega_{01}=-1
-```
-
-exists because odometry connects $x_0$ and $x_1$.
-
-Similarly,
-
-```math
-\Omega_{14}=-1
-```
-
-exists because $x_1$ observed $L_0$.
-
-Because every measurement is added with the same strength, each diagonal entry simply counts the measurements that involve that variable. For example,
-
-```math
-\Omega_{22}=4
-```
-
-because $x_2$ is involved in the odometry from $x_1$, the odometry to $x_3$, the observation of $L_0$, and the observation of $L_1$.
-
----
-
 ## Solving the System
 
 We now have
