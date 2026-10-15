@@ -116,7 +116,7 @@ def data_points_figure():
         ax.annotate(f"({t:.0f}, {y:.0f})", xy=(t, y), xytext=(t + 0.08, y + 0.15), color=TEXT,
                     fontsize=12)
     ax.set_title("The system's rows, reread as data points", color=TEXT, fontsize=15, pad=12)
-    fig.savefig(os.path.join(OUT_DIR, "data_points.png"), dpi=140, facecolor=BG)
+    fig.savefig(os.path.join(OUT_DIR, "data_points.png"), dpi=70, facecolor=BG)
     plt.close(fig)
 
 
@@ -132,7 +132,7 @@ def line_fit_figure():
     leg = ax.legend(loc="upper left", facecolor=BG, edgecolor=GRID, fontsize=14)
     for text in leg.get_texts():
         text.set_color(TEXT)
-    fig.savefig(os.path.join(OUT_DIR, "line_fit.png"), dpi=140, facecolor=BG)
+    fig.savefig(os.path.join(OUT_DIR, "line_fit.png"), dpi=70, facecolor=BG)
     plt.close(fig)
 
 
