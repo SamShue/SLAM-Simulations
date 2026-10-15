@@ -184,7 +184,11 @@ Every one of our three points lies exactly on this line, because the original sy
 
 ## When the Data Doesn't Fit a Line
 
-Real measurements are rarely this clean. Suppose that instead of measuring $y=3$ at $t=2$, we had measured $y=6$, so our right-hand side became $\mathbf{b}=(1,2,6)$ instead of $(1,2,3)$.
+Real measurements are rarely this clean. Suppose that instead of measuring $y=3$ at $t=2$, we had measured $y=6$, giving us three points that don't lie on a single line:
+
+![Three points plotted on a t-y graph: (0, 1), (1, 2), and (2, 6). The first two points suggest a line with slope 1, but the third point sits well above where that line would predict.](images/data_points_no_fit.png)
+
+In terms of the linear system, this means our right-hand side became $\mathbf{b}=(1,2,6)$ instead of $(1,2,3)$.
 
 The first two equations are unchanged, so solving them still gives $x_1=1$ and $x_2=1$, exactly as before. But checking these same values against the third equation:
 
@@ -196,7 +200,7 @@ which doesn't match the measured value of $6$. There is no single $x_1$ and $x_2
 
 We already know that $A\mathbf{x}$ can only ever produce a vector somewhere on the plane $\mathrm{Col}(A)$, no matter what $x_1$ and $x_2$ we choose. If no $\mathbf{x}$ reaches $\mathbf{b}=(1,2,6)$, that can only mean one thing: $\mathbf{b}$ itself does not lie on that plane.
 
-![The column space plane from before, shown again with a1 and a2, but now with a new gold vector b equal to (1, 2, 6) whose tip clearly sits off of the plane's surface, with a short red segment marking the gap between the tip of b and the plane.](images/no_solution.png)
+![The column space plane from before, shown again with a1 and a2, but now with a new gold vector b equal to (1, 2, 6) whose tip clearly sits off of the plane's surface, with a thick red arrow pointing from the plane up to the tip of b, making the gap unmistakable.](images/no_solution.png)
 
 We can't reach $\mathbf{b}$ exactly — but we don't have to give up entirely. We can still ask for the closest point to $\mathbf{b}$ that the column space *does* contain. That closest point is called the **projection** of $\mathbf{b}$ onto $\mathrm{Col}(A)$, and the $x_1$ and $x_2$ that produce it give us the best approximate solution to our system: the line that comes closest, overall, to passing through all of our data points. Finding that line — the one that minimizes the total error between the line and the data — is exactly the **least squares** problem this whole document is named after.
 

@@ -103,21 +103,23 @@ def column_space_figure():
 
 
 def no_solution_figure():
-    fig, ax = new_3d_plane_axes(elev=24, azim=-40, span=(-1, 9),
-                                 plane_range=((-0.3, 1.8), (-0.3, 3.2)))
+    fig, ax = new_3d_plane_axes(elev=12, azim=-35, span=(-1, 7.5),
+                                 plane_range=((-0.3, 1.5), (-0.3, 2.8)))
 
     draw_arrow(ax, A1, COL_A1, r"$\mathbf{a}_1$")
     draw_arrow(ax, A2, COL_A2, r"$\mathbf{a}_2$")
-    draw_arrow(ax, B_NO_SOLUTION, POINT, r"$\mathbf{b}=(1,2,6)$", lw=3.8, zorder=7)
 
-    # A bright, unlabeled guide line down to the plane, to make the gap clearly visible.
+    # The closest point the plane actually contains, and the gap from there up to b.
     AtA = np.column_stack([A1, A2]).T @ np.column_stack([A1, A2])
     Atb = np.column_stack([A1, A2]).T @ B_NO_SOLUTION
     xhat = np.linalg.solve(AtA, Atb)
     foot = xhat[0] * A1 + xhat[1] * A2
-    ax.plot([B_NO_SOLUTION[0], foot[0]], [B_NO_SOLUTION[1], foot[1]],
-            [B_NO_SOLUTION[2], foot[2]], color=VEC_ERR, linewidth=3.2, zorder=6)
-    ax.scatter(*foot, color=VEC_ERR, s=55, zorder=7, edgecolor=BG, linewidth=1.0)
+    gap = B_NO_SOLUTION - foot
+
+    ax.scatter(*foot, color=VEC_ERR, s=70, zorder=6, edgecolor=BG, linewidth=1.0)
+    ax.quiver(*foot, *gap, color=VEC_ERR, linewidth=4.2, arrow_length_ratio=0.18, zorder=7)
+    draw_arrow(ax, B_NO_SOLUTION, POINT, r"$\mathbf{b}=(1,2,6)$", lw=3.8, zorder=8,
+               label_offset=1.05)
 
     ax.set_title("b does not lie on the plane: this system has no solution", color=TEXT,
                  fontsize=13.5, pad=0)
@@ -125,7 +127,7 @@ def no_solution_figure():
     plt.close(fig)
 
 
-def new_2d_axes():
+def new_2d_axes(ylim=(0, 4)):
     fig = plt.figure(figsize=(8, 6.2), facecolor=BG)
     ax = fig.add_axes([0.11, 0.12, 0.85, 0.82])
     ax.set_facecolor(BG)
@@ -136,7 +138,7 @@ def new_2d_axes():
     ax.set_ylabel("y", color=TEXT, fontsize=15)
     ax.grid(True, color=GRID, alpha=0.25, linewidth=0.8)
     ax.set_xlim(-0.5, 2.5)
-    ax.set_ylim(0, 4)
+    ax.set_ylim(*ylim)
     return fig, ax
 
 
@@ -149,6 +151,18 @@ def data_points_figure():
                     fontsize=12)
     ax.set_title("The system's rows, reread as data points", color=TEXT, fontsize=15, pad=12)
     fig.savefig(os.path.join(OUT_DIR, "data_points.png"), dpi=70, facecolor=BG)
+    plt.close(fig)
+
+
+def data_points_no_fit_figure():
+    fig, ax = new_2d_axes(ylim=(0, 7))
+    ax.plot(A2, B_NO_SOLUTION, "o", color=POINT, markersize=13, markeredgecolor=BG,
+            markeredgewidth=1.3, zorder=4)
+    for t, y in zip(A2, B_NO_SOLUTION):
+        ax.annotate(f"({t:.0f}, {y:.0f})", xy=(t, y), xytext=(t + 0.08, y + 0.15), color=TEXT,
+                    fontsize=12)
+    ax.set_title("Three points that don't lie on a single line", color=TEXT, fontsize=15, pad=12)
+    fig.savefig(os.path.join(OUT_DIR, "data_points_no_fit.png"), dpi=70, facecolor=BG)
     plt.close(fig)
 
 
@@ -196,8 +210,9 @@ def main():
     column_space_figure()
     no_solution_figure()
     data_points_figure()
+    data_points_no_fit_figure()
     line_fit_figure()
-    print("Generated 4 figures in", OUT_DIR)
+    print("Generated 5 figures in", OUT_DIR)
 
 
 if __name__ == "__main__":
