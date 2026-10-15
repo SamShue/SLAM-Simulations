@@ -154,4 +154,32 @@ A=
 }
 ```
 
+## Reframing as a Data-Fitting Problem
+
+The same linear system we've been using can be read in a completely different way: as fitting a line to a small set of data points.
+
+Look again at the second column of $A$, which is $(0,1,2)$, and the vector $\mathbf{b}$, which is $(1,2,3)$. If we treat each row of the system as its own data point — using the entry from $A$'s second column as an input $t$, and the matching entry of $\mathbf{b}$ as an output $y$ — we get three points:
+
+| Row | Input ($t$) | Output ($y$) |
+|---|---|---|
+| 1 | $0$ | $1$ |
+| 2 | $1$ | $2$ |
+| 3 | $2$ | $3$ |
+
+![Three points plotted on a t-y graph: (0, 1), (1, 2), and (2, 3), each labeled with its coordinates.](images/data_points.png)
+
+Written this way, each row of the system is really an equation for a line. The first column of $A$ is always $1$, so row $i$ says $x_1+x_2t_i=y_i$ — in other words, $y=x_2t+x_1$: a line with slope $x_2$ and intercept $x_1$. Those are the exact same $x_1$ and $x_2$ we solved for earlier. To avoid confusing this intercept with the vector $\mathbf{b}$, we'll call it $c$ instead, and write the line in the more familiar form
+
+```math
+\boxed{y=mt+c}
+```
+
+with $m=x_2$ and $c=x_1$.
+
+We already solved this system and found $x_1=1$ and $x_2=1$, so $m=1$ and $c=1$. The solution to our linear system is really just the line $y=t+1$:
+
+![The same three points, now with the line y equals t plus 1 drawn through them. The line passes exactly through all three points.](images/line_fit.png)
+
+Every one of our three points lies exactly on this line, because the original system had an exact solution — there was an $x_1$ and $x_2$ that satisfied all three equations at once. Solving a linear system and fitting a line through data turn out to be the very same problem.
+
 

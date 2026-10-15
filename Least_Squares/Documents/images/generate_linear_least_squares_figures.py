@@ -24,9 +24,14 @@ PLANE = "#4f7fa3"
 
 A1 = np.array([1.0, 1.0, 1.0])
 A2 = np.array([0.0, 1.0, 2.0])
+B = np.array([1.0, 2.0, 3.0])
 
 # The example (x1, x2) combinations used in the document.
 EXAMPLES = [(2.0, 3.0), (1.0, 1.0), (0.0, 2.0), (3.0, 0.0)]
+
+# The original system's exact solution, reinterpreted as a line y = m t + c.
+X1_SOL, X2_SOL = 1.0, 1.0
+C_SOL, M_SOL = X1_SOL, X2_SOL
 
 
 def plane_grid(s_range, t_range, n=4):
@@ -88,6 +93,49 @@ def column_space_figure():
     plt.close(fig)
 
 
+def new_2d_axes():
+    fig = plt.figure(figsize=(8, 6.2), facecolor=BG)
+    ax = fig.add_axes([0.11, 0.12, 0.85, 0.82])
+    ax.set_facecolor(BG)
+    for spine in ax.spines.values():
+        spine.set_color(GRID)
+    ax.tick_params(colors=TEXT, labelsize=13)
+    ax.set_xlabel("t", color=TEXT, fontsize=15)
+    ax.set_ylabel("y", color=TEXT, fontsize=15)
+    ax.grid(True, color=GRID, alpha=0.25, linewidth=0.8)
+    ax.set_xlim(-0.5, 2.5)
+    ax.set_ylim(0, 4)
+    return fig, ax
+
+
+def data_points_figure():
+    fig, ax = new_2d_axes()
+    ax.plot(A2, B, "o", color=POINT, markersize=13, markeredgecolor=BG, markeredgewidth=1.3,
+            zorder=4)
+    for t, y in zip(A2, B):
+        ax.annotate(f"({t:.0f}, {y:.0f})", xy=(t, y), xytext=(t + 0.08, y + 0.15), color=TEXT,
+                    fontsize=12)
+    ax.set_title("The system's rows, reread as data points", color=TEXT, fontsize=15, pad=12)
+    fig.savefig(os.path.join(OUT_DIR, "data_points.png"), dpi=140, facecolor=BG)
+    plt.close(fig)
+
+
+def line_fit_figure():
+    fig, ax = new_2d_axes()
+    ts = np.array([-0.5, 2.5])
+    slope_term = "t" if M_SOL == 1 else f"{M_SOL:.0f}t"
+    ax.plot(ts, M_SOL * ts + C_SOL, color=COL_A1, linewidth=3,
+            label=rf"$y={slope_term}+{C_SOL:.0f}$", zorder=2)
+    ax.plot(A2, B, "o", color=POINT, markersize=13, markeredgecolor=BG, markeredgewidth=1.3,
+            zorder=4)
+    ax.set_title("The solution is the line through every point", color=TEXT, fontsize=15, pad=12)
+    leg = ax.legend(loc="upper left", facecolor=BG, edgecolor=GRID, fontsize=14)
+    for text in leg.get_texts():
+        text.set_color(TEXT)
+    fig.savefig(os.path.join(OUT_DIR, "line_fit.png"), dpi=140, facecolor=BG)
+    plt.close(fig)
+
+
 def main():
     os.makedirs(OUT_DIR, exist_ok=True)
 
@@ -102,8 +150,13 @@ def main():
         v = x1 * A1 + x2 * A2
         assert np.allclose(v, expected_v), (x1, x2, v)
 
+    # The solution, reread as a line y = m t + c, must pass through every (t, y) point.
+    assert np.allclose(M_SOL * A2 + C_SOL, B)
+
     column_space_figure()
-    print("Generated 1 figure in", OUT_DIR)
+    data_points_figure()
+    line_fit_figure()
+    print("Generated 3 figures in", OUT_DIR)
 
 
 if __name__ == "__main__":

@@ -12,7 +12,7 @@ This folder contains a series of documents that build up the **least squares** m
 
 | Document | What it covers |
 |---|---|
-| [Linear Least Squares](Documents/linear_least_squares.md) | Linear systems of equations written as $A\mathbf{x}=\mathbf{b}$, and the column space of a matrix |
+| [Linear Least Squares](Documents/linear_least_squares.md) | Linear systems of equations written as $A\mathbf{x}=\mathbf{b}$, the column space of a matrix, and reframing a solved system as a line fit through data points |
 
 More documents will be added to this series, extending this foundation to the least squares problem itself and to weighted least squares, the method GraphSLAM itself is built on. See the [GraphSLAM](../Graph_SLAM) folder for that application.
 
