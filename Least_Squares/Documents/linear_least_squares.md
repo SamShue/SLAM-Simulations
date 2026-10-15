@@ -182,4 +182,22 @@ We already solved this system and found $x_1=1$ and $x_2=1$, so $m=1$ and $c=1$.
 
 Every one of our three points lies exactly on this line, because the original system had an exact solution — there was an $x_1$ and $x_2$ that satisfied all three equations at once. Solving a linear system and fitting a line through data turn out to be the very same problem.
 
+## When the Data Doesn't Fit a Line
+
+Real measurements are rarely this clean. Suppose that instead of measuring $y=3$ at $t=2$, we had measured $y=6$, so our right-hand side became $\mathbf{b}=(1,2,6)$ instead of $(1,2,3)$.
+
+The first two equations are unchanged, so solving them still gives $x_1=1$ and $x_2=1$, exactly as before. But checking these same values against the third equation:
+
+```math
+x_1+2x_2=1+2(1)=3,
+```
+
+which doesn't match the measured value of $6$. There is no single $x_1$ and $x_2$ that satisfies all three equations at once — **this system of equations has no solution.**
+
+We already know that $A\mathbf{x}$ can only ever produce a vector somewhere on the plane $\mathrm{Col}(A)$, no matter what $x_1$ and $x_2$ we choose. If no $\mathbf{x}$ reaches $\mathbf{b}=(1,2,6)$, that can only mean one thing: $\mathbf{b}$ itself does not lie on that plane.
+
+![The column space plane from before, shown again with a1 and a2, but now with a new gold vector b equal to (1, 2, 6) whose tip clearly sits off of the plane's surface, with a short red segment marking the gap between the tip of b and the plane.](images/no_solution.png)
+
+We can't reach $\mathbf{b}$ exactly — but we don't have to give up entirely. We can still ask for the closest point to $\mathbf{b}$ that the column space *does* contain. That closest point is called the **projection** of $\mathbf{b}$ onto $\mathrm{Col}(A)$, and the $x_1$ and $x_2$ that produce it give us the best approximate solution to our system: the line that comes closest, overall, to passing through all of our data points. Finding that line — the one that minimizes the total error between the line and the data — is exactly the **least squares** problem this whole document is named after.
+
 

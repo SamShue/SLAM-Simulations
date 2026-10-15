@@ -21,10 +21,14 @@ COL_A1 = "#7fd1ff"
 COL_A2 = "#c792ea"
 POINT = "#ffd166"
 PLANE = "#4f7fa3"
+VEC_ERR = "#ff8a80"
 
 A1 = np.array([1.0, 1.0, 1.0])
 A2 = np.array([0.0, 1.0, 2.0])
 B = np.array([1.0, 2.0, 3.0])
+
+# A second, inconsistent right-hand side: only the third measurement changes.
+B_NO_SOLUTION = np.array([1.0, 2.0, 6.0])
 
 # The example (x1, x2) combinations used in the document.
 EXAMPLES = [(2.0, 3.0), (1.0, 1.0), (0.0, 2.0), (3.0, 0.0)]
@@ -51,7 +55,7 @@ def draw_arrow(ax, vec, color, label=None, lw=3.2, zorder=5, label_offset=1.12):
                 fontweight="bold", zorder=zorder + 1)
 
 
-def column_space_figure():
+def new_3d_plane_axes(elev=18, azim=-55, span=(-2, 11), plane_range=((-0.3, 3.3), (-0.3, 3.3))):
     fig = plt.figure(figsize=(9.5, 8.5), facecolor=BG)
     ax = fig.add_subplot(111, projection="3d")
     fig.subplots_adjust(left=0.0, right=1.0, bottom=0.0, top=1.0)
@@ -67,16 +71,21 @@ def column_space_figure():
     ax.set_zlabel("equation 3", color=TEXT, fontsize=11, labelpad=8)
 
     # A single shared, equal-span bounding box so angles render undistorted.
-    ax.set_xlim(-2, 11)
-    ax.set_ylim(-2, 11)
-    ax.set_zlim(-2, 11)
+    ax.set_xlim(*span)
+    ax.set_ylim(*span)
+    ax.set_zlim(*span)
     ax.set_box_aspect((1, 1, 1))
-    ax.view_init(elev=18, azim=-55)
+    ax.view_init(elev=elev, azim=azim)
 
-    xs, ys, zs = plane_grid((-0.3, 3.3), (-0.3, 3.3))
+    xs, ys, zs = plane_grid(*plane_range)
     ax.plot_surface(xs, ys, zs, color=PLANE, alpha=0.55, shade=False, linewidth=0.5,
                      edgecolor=(1, 1, 1, 0.25), rstride=1, cstride=1, zorder=1,
                      antialiased=False)
+    return fig, ax
+
+
+def column_space_figure():
+    fig, ax = new_3d_plane_axes()
 
     draw_arrow(ax, A1, COL_A1, r"$\mathbf{a}_1$")
     draw_arrow(ax, A2, COL_A2, r"$\mathbf{a}_2$")
@@ -90,6 +99,29 @@ def column_space_figure():
     ax.set_title("Every A x lands on the same plane through the origin", color=TEXT,
                  fontsize=14, pad=0)
     fig.savefig(os.path.join(OUT_DIR, "column_space_plane.png"), dpi=140, facecolor=BG)
+    plt.close(fig)
+
+
+def no_solution_figure():
+    fig, ax = new_3d_plane_axes(elev=24, azim=-40, span=(-1, 9),
+                                 plane_range=((-0.3, 1.8), (-0.3, 3.2)))
+
+    draw_arrow(ax, A1, COL_A1, r"$\mathbf{a}_1$")
+    draw_arrow(ax, A2, COL_A2, r"$\mathbf{a}_2$")
+    draw_arrow(ax, B_NO_SOLUTION, POINT, r"$\mathbf{b}=(1,2,6)$", lw=3.8, zorder=7)
+
+    # A bright, unlabeled guide line down to the plane, to make the gap clearly visible.
+    AtA = np.column_stack([A1, A2]).T @ np.column_stack([A1, A2])
+    Atb = np.column_stack([A1, A2]).T @ B_NO_SOLUTION
+    xhat = np.linalg.solve(AtA, Atb)
+    foot = xhat[0] * A1 + xhat[1] * A2
+    ax.plot([B_NO_SOLUTION[0], foot[0]], [B_NO_SOLUTION[1], foot[1]],
+            [B_NO_SOLUTION[2], foot[2]], color=VEC_ERR, linewidth=3.2, zorder=6)
+    ax.scatter(*foot, color=VEC_ERR, s=55, zorder=7, edgecolor=BG, linewidth=1.0)
+
+    ax.set_title("b does not lie on the plane: this system has no solution", color=TEXT,
+                 fontsize=13.5, pad=0)
+    fig.savefig(os.path.join(OUT_DIR, "no_solution.png"), dpi=140, facecolor=BG)
     plt.close(fig)
 
 
@@ -153,10 +185,19 @@ def main():
     # The solution, reread as a line y = m t + c, must pass through every (t, y) point.
     assert np.allclose(M_SOL * A2 + C_SOL, B)
 
+    # Check that the first two rows of the inconsistent system agree with the original
+    # solution, but the third row does not -- confirming there is no exact solution.
+    x_partial = np.linalg.solve(np.column_stack([A1, A2])[:2], B_NO_SOLUTION[:2])
+    assert np.allclose(x_partial, [1.0, 1.0])
+    predicted_third_row = np.array([A1[2], A2[2]]) @ x_partial
+    assert np.isclose(predicted_third_row, 3.0)
+    assert not np.isclose(predicted_third_row, B_NO_SOLUTION[2])
+
     column_space_figure()
+    no_solution_figure()
     data_points_figure()
     line_fit_figure()
-    print("Generated 3 figures in", OUT_DIR)
+    print("Generated 4 figures in", OUT_DIR)
 
 
 if __name__ == "__main__":
