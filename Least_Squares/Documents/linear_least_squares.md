@@ -50,7 +50,33 @@ x_2
 \end{bmatrix}
 ```
 
-Multiplying the matrix by the vector of variables — taking the dot product of each row with the vector — reproduces exactly the system of equations we started with.
+Multiplying the matrix by the vector of variables — taking the dot product of each row with the vector — reproduces exactly the system of equations we started with. Writing that out explicitly:
+
+```math
+\begin{bmatrix}
+1 & 0\\
+1 & 1\\
+1 & 2
+\end{bmatrix}
+\begin{bmatrix}
+x_1\\
+x_2
+\end{bmatrix}
+=
+\begin{bmatrix}
+1x_1+0x_2\\
+1x_1+1x_2\\
+1x_1+2x_2
+\end{bmatrix}
+=
+\begin{bmatrix}
+1\\
+2\\
+3
+\end{bmatrix}
+```
+
+Each row of the product is just the sum of that row's entries multiplied by the matching entries of $\mathbf{x}$ — and reading each row of the result as its own equation gives back exactly the three equations we started with.
 
 This is called a **linear system of equations**, and it's usually written in the compact form
 
@@ -59,8 +85,6 @@ This is called a **linear system of equations**, and it's usually written in the
 ```
 
 where $A$ is the **coefficient matrix**, $\mathbf{x}$ is the vector of unknowns, and $\mathbf{b}$ is the vector on the right-hand side.
-
-### The Coefficient Matrix
 
 Now let's set aside the right-hand side vector $\mathbf{b}$ entirely, and ask a different question: what vectors *can* the coefficient matrix $A$ produce? We're free to choose any values we like for $x_1$ and $x_2$, and $A$ will turn them into some vector.
 
