@@ -395,6 +395,86 @@ Plotting this line against the original three points shows it passing as close a
 
 ![The three points (0,1), (1,2), and (2,6) plotted with the best fit line y equals 2.5t plus 0.5 drawn through them, and a short dashed red vertical segment connecting each point down or up to the line, showing the residual at each point.](images/least_squares_fit.png)
 
-Notice that the residuals don't all have the same sign or size — the line passes below the first point, above the second, and below the third — but it's positioned so that the *sum of squared residuals* across all three points is as small as it can possibly be. No other line through this data would produce a smaller total squared error, which is exactly what makes it the least squares solution. 
+Notice that the residuals don't all have the same sign or size — the line passes below the first point, above the second, and below the third — but it's positioned so that the *sum of squared residuals* across all three points is as small as it can possibly be. No other line through this data would produce a smaller total squared error, which is exactly what makes it the least squares solution.
+
+## Beyond Fitting a Line
+
+Everything we just did was built around one specific example — three data points and a straight line — but nothing about the argument actually depended on that. The orthogonality principle, the normal equations, and the formula for $\hat{\mathbf{x}}$ all work exactly the same way no matter how many data points we have, how many unknowns we're solving for, or what kind of curve or surface we're fitting. That generality is really the whole point of writing the problem in terms of matrices and vectors in the first place.
+
+### Fitting Curves and Surfaces
+
+Suppose that instead of a straight line, we suspected our data followed a gentle curve — a quadratic $y=c+mt+qt^2$. We can still write this as a linear system; we just need one more column in $A$ to hold the squared values:
+
+```math
+A=
+\begin{bmatrix}
+1 & t_1 & t_1^2\\
+1 & t_2 & t_2^2\\
+\vdots & \vdots & \vdots\\
+1 & t_n & t_n^2
+\end{bmatrix},
+\qquad
+\hat{\mathbf{x}}=
+\begin{bmatrix}
+c\\m\\q
+\end{bmatrix},
+\qquad
+\mathbf{b}=
+\begin{bmatrix}
+y_1\\y_2\\\vdots\\y_n
+\end{bmatrix}
+```
+
+This is still a system of the form $A\mathbf{x}=\mathbf{b}$ — the unknowns $c$, $m$, and $q$ just happen to multiply $1$, $t$, and $t^2$ instead of $1$ and $t$. Every data point still contributes one row, so with $n$ data points in hand, $A$ has $n$ rows and $3$ columns rather than $2$. We could just as easily add a fourth column of $t_i^3$ values, or a column built from some completely different measured quantity, like $x_i$ or $z_i$ — each new column simply represents one more effect we think contributes to $y$, and each one earns its own entry in $\hat{\mathbf{x}}$.
+
+Whatever we put in $A$, the same question we asked before comes right back: what's the closest point to $\mathbf{b}$ that $A$'s columns can actually reach? $\mathrm{Col}(A)$ is still exactly the set of vectors reachable by combining $A$'s columns — it's just harder to draw now, since instead of a flat plane sitting inside three dimensions, it might be a three-dimensional slice sitting inside a space with one axis per data point. We can't sketch that directly once we have more than three data points, but the orthogonality argument never actually needed a picture — it only needed $\mathbf{e}$ to be perpendicular to every column of $A$, and nothing about that requires $A$ to have any particular number of columns or rows. So the same normal equations apply, completely unchanged:
+
+```math
+\boxed{A^{\mathsf{T}}A\hat{\mathbf{x}}=A^{\mathsf{T}}\mathbf{b}}
+```
+
+— except now $A^{\mathsf{T}}A$ is a $3\times3$ matrix instead of $2\times2$, since it has one row and one column for every unknown we're solving for. In general, if $A$ has $n$ rows (one per data point) and $k$ columns (one per unknown), $A^{\mathsf{T}}A$ is always $k\times k$ — a nice, compact system to solve, no matter how large $n$ gets. This is part of why least squares is so useful in practice: even with millions of data points, we only ever have to invert a matrix as big as the number of things we're actually trying to estimate.
+
+Of course, we'd like $n$ to be comfortably bigger than $k$ — plenty of equations for relatively few unknowns — since that's what made the system overdetermined in the first place and gave the least squares answer something meaningful to balance across. If $k$ were larger than $n$, we'd have too few equations to pin down every unknown, and the whole "closest point" argument stops being useful.
+
+### Rank: How Many Independent Directions
+
+There's a subtlety we glossed over earlier: solving the normal equations by multiplying both sides by $(A^{\mathsf{T}}A)^{-1}$ only works if that inverse actually exists. We said this holds "whenever $A$'s columns are linearly independent" — it's worth seeing what goes wrong when they aren't.
+
+Suppose someone accidentally built $A$ from the same measurement twice, just scaled differently, so that its two columns were $\mathbf{a}_1=(1,1,1)$ and $\mathbf{a}_2=(2,2,2)$. Even though $A$ still has two columns, $\mathbf{a}_2$ doesn't point in any new direction — it's just $2\mathbf{a}_1$, lying exactly along the same line. So instead of spanning a whole plane, the way $\mathbf{a}_1=(1,1,1)$ and $\mathbf{a}_2=(0,1,2)$ did earlier, these two columns can only ever reach points along a single line through the origin.
+
+This "true number of independent directions a matrix's columns can reach" has a name: it's called the **rank** of the matrix. $\mathrm{Col}(A)$ for our original $A$ was a full plane — two independent directions — so that $A$ had rank $2$. The new $A$, despite also having two columns, only has rank $1$.
+
+We can see the normal equations break down exactly where we'd expect. Keeping $\mathbf{b}=(1,2,6)$ as before:
+
+```math
+A^{\mathsf{T}}A=
+\begin{bmatrix}
+1&1&1\\
+2&2&2
+\end{bmatrix}
+\begin{bmatrix}
+1&2\\1&2\\1&2
+\end{bmatrix}
+=
+\begin{bmatrix}
+3&6\\6&12
+\end{bmatrix},
+\qquad
+A^{\mathsf{T}}\mathbf{b}=
+\begin{bmatrix}
+9\\18
+\end{bmatrix}
+```
+
+Writing out the normal equations row by row, $3\hat{x}_1+6\hat{x}_2=9$ simplifies to $\hat{x}_1+2\hat{x}_2=3$, and $6\hat{x}_1+12\hat{x}_2=18$ simplifies to exactly that same equation. We don't actually have two independent equations for two unknowns — we have one equation, written down twice. Any $\hat{x}_1,\hat{x}_2$ satisfying $\hat{x}_1+2\hat{x}_2=3$ reaches the exact same point in the column space, so there are infinitely many equally good least squares solutions instead of one.
+
+That's exactly what it means for $A^{\mathsf{T}}A$ to fail to be invertible: $A^{\mathsf{T}}A$ is invertible precisely when $A$ has **full column rank** — when its rank equals its number of columns, so every column really does point somewhere new. When that holds, the least squares solution
+
+```math
+\hat{\mathbf{x}}=(A^{\mathsf{T}}A)^{-1}A^{\mathsf{T}}\mathbf{b}
+```
+
+is unique, however many columns $A$ has — two, three, or two hundred. Rank, in the end, is just a way of counting how many truly independent quantities we can hope to estimate from our data, no matter how many columns we happened to write down. 
 
 
