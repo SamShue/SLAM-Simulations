@@ -202,6 +202,168 @@ We already know that $A\mathbf{x}$ can only ever produce a vector somewhere on t
 
 ![The column space plane from before, shown again with a1 and a2, but now with a new gold vector b equal to (1, 2, 6) whose tip clearly sits off of the plane's surface, with a thick red arrow pointing from the plane up to the tip of b, making the gap unmistakable.](images/no_solution.png)
 
-We can't reach $\mathbf{b}$ exactly — but we don't have to give up entirely. We can still ask for the closest point to $\mathbf{b}$ that the column space *does* contain. That closest point is called the **projection** of $\mathbf{b}$ onto $\mathrm{Col}(A)$, and the $x_1$ and $x_2$ that produce it give us the best approximate solution to our system: the line that comes closest, overall, to passing through all of our data points. Finding that line — the one that minimizes the total error between the line and the data — is exactly the **least squares** problem this whole document is named after.
+We can't reach $\mathbf{b}$ exactly — but we don't have to give up entirely. We can still ask for the closest point to $\mathbf{b}$ that the column space *does* contain. This point would represent the line that minimizes the error between the data points and the line. It gives us the best fit line.
+
+
+
+So how do we find the point in the column space that best fits the data? We will **project** the vector onto the column space.
+
+## Projecting onto the Column Space
+
+Call the closest point in $\mathrm{Col}(A)$ to $\mathbf{b}$ the vector $\mathbf{p}$. Since $\mathbf{p}$ lies in the column space, it's reachable by *some* choice of variables — call them $\hat{\mathbf{x}}$ — so that $\mathbf{p}=A\hat{\mathbf{x}}$. The hat on $\hat{\mathbf{x}}$ is just a reminder that this is no longer an exact solution to $A\mathbf{x}=\mathbf{b}$, but rather the best approximation we can get.
+
+Define the **error** as the leftover piece that $\mathbf{p}$ fails to capture:
+
+```math
+\mathbf{e}=\mathbf{b}-\mathbf{p}=\mathbf{b}-A\hat{\mathbf{x}}.
+```
+
+What makes $\mathbf{p}$ the *closest* point in the plane to $\mathbf{b}$, rather than just some point in the plane? Picture sliding a candidate point around on the plane: as long as the line from that point up to $\mathbf{b}$ is slanted, you could always slide a little further and shorten it. The shortest possible connecting line — the one that can't be shortened by sliding — is the one that meets the plane at a perfect right angle. So the error vector $\mathbf{e}$ must be **orthogonal to the entire column space**.
+
+![A repeat of the plane from before, with a1 and a2 drawn, the vector b in white, its projection p drawn in gold lying flat on the plane, and a short red vector e connecting the tip of p up to the tip of b at a right angle to the plane.](images/projection.png)
+
+Being orthogonal to the whole plane is the same as being orthogonal to every vector that spans it — and since $\mathrm{Col}(A)$ is spanned by the columns of $A$, that means $\mathbf{e}$ must be orthogonal to both $\mathbf{a}_1$ and $\mathbf{a}_2$ individually. Recall that two vectors are orthogonal exactly when their dot product is zero, and that the dot product of a vector with each column of $A$ is exactly what $A^{\mathsf{T}}$ computes. So requiring $\mathbf{e}$ to be orthogonal to every column of $A$ is the same as requiring
+
+```math
+\boxed{A^{\mathsf{T}}\mathbf{e}=\mathbf{0}}
+```
+
+Substituting in $\mathbf{e}=\mathbf{b}-A\hat{\mathbf{x}}$ gives
+
+```math
+A^{\mathsf{T}}(\mathbf{b}-A\hat{\mathbf{x}})=\mathbf{0},
+```
+
+and distributing $A^{\mathsf{T}}$ across the subtraction gives
+
+```math
+A^{\mathsf{T}}\mathbf{b}-A^{\mathsf{T}}A\hat{\mathbf{x}}=\mathbf{0}.
+```
+
+Rearranging puts all the unknowns on one side, in what's called the **normal equations**:
+
+```math
+\boxed{A^{\mathsf{T}}A\hat{\mathbf{x}}=A^{\mathsf{T}}\mathbf{b}}
+```
+
+This is just another linear system, except now the coefficient matrix is $A^{\mathsf{T}}A$ and the right-hand side is $A^{\mathsf{T}}\mathbf{b}$ — both of which we can compute directly from the original $A$ and $\mathbf{b}$. As long as $A^{\mathsf{T}}A$ is invertible (which it will be whenever $A$'s columns are linearly independent, as ours are), we can solve for $\hat{\mathbf{x}}$ by multiplying both sides by $(A^{\mathsf{T}}A)^{-1}$:
+
+```math
+\boxed{\hat{\mathbf{x}}=(A^{\mathsf{T}}A)^{-1}A^{\mathsf{T}}\mathbf{b}}
+```
+
+This is the **least squares solution**. It's called that because, out of every possible $\hat{\mathbf{x}}$, it's the one that makes $\mathbf{e}$ as short as possible — and minimizing the length of $\mathbf{e}$ turns out to be the same as minimizing the *sum of the squares* of its entries, $\lVert\mathbf{e}\rVert^2=e_1^2+e_2^2+e_3^2$. That's where the method gets its name.
+
+## Solving the Example
+
+Let's apply this to the inconsistent system from before, with $A$ unchanged and $\mathbf{b}=(1,2,6)$:
+
+```math
+A=
+\begin{bmatrix}
+1 & 0\\
+1 & 1\\
+1 & 2
+\end{bmatrix},
+\qquad
+\mathbf{b}=
+\begin{bmatrix}
+1\\2\\6
+\end{bmatrix}
+```
+
+First compute $A^{\mathsf{T}}A$ and $A^{\mathsf{T}}\mathbf{b}$:
+
+```math
+A^{\mathsf{T}}A=
+\begin{bmatrix}
+1&1&1\\
+0&1&2
+\end{bmatrix}
+\begin{bmatrix}
+1&0\\1&1\\1&2
+\end{bmatrix}
+=
+\begin{bmatrix}
+3&3\\3&5
+\end{bmatrix},
+\qquad
+A^{\mathsf{T}}\mathbf{b}=
+\begin{bmatrix}
+1&1&1\\
+0&1&2
+\end{bmatrix}
+\begin{bmatrix}
+1\\2\\6
+\end{bmatrix}
+=
+\begin{bmatrix}
+9\\14
+\end{bmatrix}
+```
+
+So the normal equations are
+
+```math
+\begin{bmatrix}
+3&3\\3&5
+\end{bmatrix}
+\begin{bmatrix}
+\hat{x}_1\\\hat{x}_2
+\end{bmatrix}
+=
+\begin{bmatrix}
+9\\14
+\end{bmatrix}
+```
+
+which is just a $2\times2$ linear system — easy to solve directly. The first row says $3\hat{x}_1+3\hat{x}_2=9$, or $\hat{x}_1+\hat{x}_2=3$. Subtracting three times that from the second row, $3\hat{x}_1+5\hat{x}_2=14$, leaves $2\hat{x}_2=5$, so
+
+```math
+\hat{x}_2=2.5,\qquad \hat{x}_1=3-\hat{x}_2=0.5.
+```
+
+Translating back into slope-intercept form, $m=\hat{x}_2=2.5$ and $c=\hat{x}_1=0.5$, giving the **best fit line**
+
+```math
+\boxed{y=2.5t+0.5}
+```
+
+We can check this answer by computing the projection $\mathbf{p}=A\hat{\mathbf{x}}$ and confirming the error really is orthogonal to both columns of $A$:
+
+```math
+\mathbf{p}=
+\begin{bmatrix}
+1&0\\1&1\\1&2
+\end{bmatrix}
+\begin{bmatrix}
+0.5\\2.5
+\end{bmatrix}
+=
+\begin{bmatrix}
+0.5\\3\\5.5
+\end{bmatrix},
+\qquad
+\mathbf{e}=\mathbf{b}-\mathbf{p}=
+\begin{bmatrix}
+1\\2\\6
+\end{bmatrix}
+-
+\begin{bmatrix}
+0.5\\3\\5.5
+\end{bmatrix}
+=
+\begin{bmatrix}
+0.5\\-1\\0.5
+\end{bmatrix}
+```
+
+Taking the dot product of $\mathbf{e}$ with each column confirms orthogonality: $\mathbf{e}\cdot\mathbf{a}_1=0.5-1+0.5=0$, and $\mathbf{e}\cdot\mathbf{a}_2=0(0.5)+1(-1)+2(0.5)=0$. Since $\mathbf{e}$ is orthogonal to the whole column space, $\mathbf{p}$ really is the closest point in it to $\mathbf{b}$, exactly as the theory predicted.
+
+Plotting this line against the original three points shows it passing as close as it can to all of them at once — not through any single one exactly, but balancing the leftover gap, or **residual**, at each point:
+
+![The three points (0,1), (1,2), and (2,6) plotted with the best fit line y equals 2.5t plus 0.5 drawn through them, and a short dashed red vertical segment connecting each point down or up to the line, showing the residual at each point.](images/least_squares_fit.png)
+
+Notice that the residuals don't all have the same sign or size — the line passes below the first point, above the second, and below the third — but it's positioned so that the *sum of squared residuals* across all three points is as small as it can possibly be. No other line through this data would produce a smaller total squared error, which is exactly what makes it the least squares solution. 
 
 

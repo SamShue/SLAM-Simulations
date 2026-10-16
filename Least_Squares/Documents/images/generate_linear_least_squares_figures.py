@@ -127,6 +127,33 @@ def no_solution_figure():
     plt.close(fig)
 
 
+def projection_figure():
+    fig, ax = new_3d_plane_axes(elev=12, azim=-35, span=(-1, 7.5),
+                                 plane_range=((-0.3, 1.5), (-0.3, 2.8)))
+
+    draw_arrow(ax, A1, COL_A1, r"$\mathbf{a}_1$")
+    draw_arrow(ax, A2, COL_A2, r"$\mathbf{a}_2$")
+
+    AtA = np.column_stack([A1, A2]).T @ np.column_stack([A1, A2])
+    Atb = np.column_stack([A1, A2]).T @ B_NO_SOLUTION
+    xhat = np.linalg.solve(AtA, Atb)
+    p = xhat[0] * A1 + xhat[1] * A2
+    e = B_NO_SOLUTION - p
+
+    draw_arrow(ax, p, POINT, r"$\mathbf{p}=A\hat{\mathbf{x}}$", lw=3.6, zorder=6,
+               label_offset=1.18)
+    ax.quiver(*p, *e, color=VEC_ERR, linewidth=4.2, arrow_length_ratio=0.18, zorder=7)
+    ax.text(*(p + e * 0.55 + np.array([0.3, 0.3, 0.3])), r"$\mathbf{e}$", color=VEC_ERR,
+            fontsize=14, fontweight="bold", zorder=8)
+    draw_arrow(ax, B_NO_SOLUTION, "#ffffff", r"$\mathbf{b}$", lw=2.4, zorder=5,
+               label_offset=1.05)
+
+    ax.set_title(r"$\mathbf{p}$ is the closest point in Col(A); $\mathbf{e}$ is orthogonal to it",
+                 color=TEXT, fontsize=13, pad=0)
+    fig.savefig(os.path.join(OUT_DIR, "projection.png"), dpi=140, facecolor=BG)
+    plt.close(fig)
+
+
 def new_2d_axes(ylim=(0, 4)):
     fig = plt.figure(figsize=(8, 6.2), facecolor=BG)
     ax = fig.add_axes([0.11, 0.12, 0.85, 0.82])
@@ -182,6 +209,32 @@ def line_fit_figure():
     plt.close(fig)
 
 
+def least_squares_fit_figure():
+    AtA = np.column_stack([A1, A2]).T @ np.column_stack([A1, A2])
+    Atb = np.column_stack([A1, A2]).T @ B_NO_SOLUTION
+    xhat = np.linalg.solve(AtA, Atb)
+    c_hat, m_hat = xhat[0], xhat[1]
+
+    fig, ax = new_2d_axes(ylim=(0, 7))
+    ts = np.array([-0.5, 2.5])
+    ax.plot(ts, m_hat * ts + c_hat, color=COL_A1, linewidth=3,
+            label=rf"$y={m_hat:.1f}t+{c_hat:.1f}$", zorder=2)
+
+    for t, y in zip(A2, B_NO_SOLUTION):
+        y_hat = m_hat * t + c_hat
+        ax.plot([t, t], [y, y_hat], color=VEC_ERR, linewidth=2.2, linestyle="--", zorder=3)
+
+    ax.plot(A2, B_NO_SOLUTION, "o", color=POINT, markersize=13, markeredgecolor=BG,
+            markeredgewidth=1.3, zorder=4, label="data")
+    ax.set_title("The least squares line minimizes the total residual gap", color=TEXT,
+                 fontsize=14.5, pad=12)
+    leg = ax.legend(loc="upper left", facecolor=BG, edgecolor=GRID, fontsize=13)
+    for text in leg.get_texts():
+        text.set_color(TEXT)
+    fig.savefig(os.path.join(OUT_DIR, "least_squares_fit.png"), dpi=70, facecolor=BG)
+    plt.close(fig)
+
+
 def main():
     os.makedirs(OUT_DIR, exist_ok=True)
 
@@ -207,12 +260,29 @@ def main():
     assert np.isclose(predicted_third_row, 3.0)
     assert not np.isclose(predicted_third_row, B_NO_SOLUTION[2])
 
+    # Check the normal-equations solution quoted in the document for b = (1, 2, 6).
+    AtA = np.column_stack([A1, A2]).T @ np.column_stack([A1, A2])
+    Atb = np.column_stack([A1, A2]).T @ B_NO_SOLUTION
+    assert np.allclose(AtA, [[3, 3], [3, 5]])
+    assert np.allclose(Atb, [9, 14])
+    xhat = np.linalg.solve(AtA, Atb)
+    assert np.allclose(xhat, [0.5, 2.5])
+    p = xhat[0] * A1 + xhat[1] * A2
+    e = B_NO_SOLUTION - p
+    assert np.allclose(p, [0.5, 3.0, 5.5])
+    assert np.allclose(e, [0.5, -1.0, 0.5])
+    # The error must be orthogonal to every column of A.
+    assert np.isclose(e @ A1, 0.0)
+    assert np.isclose(e @ A2, 0.0)
+
     column_space_figure()
     no_solution_figure()
     data_points_figure()
     data_points_no_fit_figure()
     line_fit_figure()
-    print("Generated 5 figures in", OUT_DIR)
+    projection_figure()
+    least_squares_fit_figure()
+    print("Generated 7 figures in", OUT_DIR)
 
 
 if __name__ == "__main__":
