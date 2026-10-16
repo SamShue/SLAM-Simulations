@@ -222,7 +222,38 @@ What makes $\mathbf{p}$ the *closest* point in the plane to $\mathbf{b}$, rather
 
 ![A repeat of the plane from before, with a1 and a2 drawn, the vector b in white, its projection p drawn in gold lying flat on the plane, and a short red vector e connecting the tip of p up to the tip of b at a right angle to the plane.](images/projection.png)
 
-Being orthogonal to the whole plane is the same as being orthogonal to every vector that spans it — and since $\mathrm{Col}(A)$ is spanned by the columns of $A$, that means $\mathbf{e}$ must be orthogonal to both $\mathbf{a}_1$ and $\mathbf{a}_2$ individually. Recall that two vectors are orthogonal exactly when their dot product is zero, and that the dot product of a vector with each column of $A$ is exactly what $A^{\mathsf{T}}$ computes. So requiring $\mathbf{e}$ to be orthogonal to every column of $A$ is the same as requiring
+Being orthogonal to the whole plane is the same as being orthogonal to every vector that spans it — and since $\mathrm{Col}(A)$ is spanned by the columns of $A$, that means $\mathbf{e}$ must be orthogonal to both $\mathbf{a}_1$ and $\mathbf{a}_2$ individually.
+
+Recall that two vectors are orthogonal exactly when their dot product is zero. For example, $(1,2)$ and $(2,-1)$ are orthogonal, since $(1)(2)+(2)(-1)=2-2=0$ — no matter how long or short we stretch either one, they'll always meet at a right angle.
+
+That same dot-product test is exactly what multiplying by $A^{\mathsf{T}}$ computes, one row at a time. $A^{\mathsf{T}}$'s rows are just $A$'s columns written sideways, so multiplying $A^{\mathsf{T}}$ by some vector $\mathbf{v}$ produces a vector whose entries are the dot products of $\mathbf{v}$ with $\mathbf{a}_1$ and $\mathbf{a}_2$ in turn. Trying this with, say, $\mathbf{v}=(2,-1,3)$:
+
+```math
+A^{\mathsf{T}}\mathbf{v}=
+\begin{bmatrix}
+1&1&1\\
+0&1&2
+\end{bmatrix}
+\begin{bmatrix}
+2\\-1\\3
+\end{bmatrix}
+=
+\begin{bmatrix}
+(1)(2)+(1)(-1)+(1)(3)\\
+(0)(2)+(1)(-1)+(2)(3)
+\end{bmatrix}
+=
+\begin{bmatrix}
+\mathbf{a}_1\cdot\mathbf{v}\\
+\mathbf{a}_2\cdot\mathbf{v}
+\end{bmatrix}
+=
+\begin{bmatrix}
+4\\5
+\end{bmatrix}
+```
+
+the first entry is $\mathbf{a}_1\cdot\mathbf{v}$ and the second is $\mathbf{a}_2\cdot\mathbf{v}$, exactly as claimed. So requiring $\mathbf{e}$ to be orthogonal to every column of $A$ is the same as requiring
 
 ```math
 \boxed{A^{\mathsf{T}}\mathbf{e}=\mathbf{0}}
