@@ -58,7 +58,7 @@ The documents in [Documents/](Documents) are meant to be read in order. Each one
 
 | Document | What it covers |
 |---|---|
-| [Introduction to EKF SLAM](Documents/ekf_slam_introduction.md) | Kalman filters from scratch, extending them to the EKF, and the block structure of the EKF SLAM state and covariance matrix |
+| [Introduction to EKF SLAM](Documents/ekf_slam_introduction.md) | What SLAM is, sensing and the SLAM process, landmarks and data association, Kalman filters from scratch, and the EKF's matrices and three steps |
 
 More documents will be added to this series, working through the full 2D equations by hand and then through the code in [SIMULATION_EKFSLAM.m](SIMULATION_EKFSLAM.m). See the [GraphSLAM](../Graph_SLAM) folder for the offline, batch alternative to this method.
 

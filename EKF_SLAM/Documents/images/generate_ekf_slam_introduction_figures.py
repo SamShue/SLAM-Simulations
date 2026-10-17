@@ -9,7 +9,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.patches import Rectangle
+from matplotlib.patches import Polygon, Rectangle
 
 OUT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -32,6 +32,112 @@ UNCHANGED = "#2d3a42"
 
 def gaussian(x, mu, var):
     return np.exp(-0.5 * (x - mu) ** 2 / var) / np.sqrt(2 * np.pi * var)
+
+
+# ---------------------------------------------------------------------------
+# Figure 0: the core SLAM intuition -- observe, drift, correct
+# ---------------------------------------------------------------------------
+
+TRUE_LINE = "#ffffff"
+ODOM_LINE = "#9fb3bf"
+CORRECTED_LINE = "#c792ea"
+SENSOR_RAY = "#ffd166"
+EXPECTED_RAY = "#c792ea"
+
+L0 = (4.0, 1.6)
+L1 = (3.6, -1.8)
+POSE0 = (0.0, 0.0, 0.0)
+POSE1_TRUE = (2.6, 1.0, np.radians(25))
+POSE1_ODOM = (3.4, -0.7, np.radians(-5))
+POSE1_CORRECTED = (2.9, 0.45, np.radians(15))
+
+INTUITION_XLIM = (-1.3, 5.3)
+INTUITION_YLIM = (-2.6, 2.6)
+
+
+def _rotate(px, py, cx, cy, angle):
+    dx, dy = px - cx, py - cy
+    ca, sa = np.cos(angle), np.sin(angle)
+    return cx + dx * ca - dy * sa, cy + dx * sa + dy * ca
+
+
+def robot_triangle(ax, pose, color, linestyle="-", size=0.4, zorder=5):
+    cx, cy, heading = pose
+    s = size
+    pts = [(cx - s * 0.8, cy + s), (cx - s * 0.8, cy - s), (cx + s * 1.1, cy)]
+    pts = [_rotate(px, py, cx, cy, heading) for px, py in pts]
+    ax.add_patch(Polygon(pts, closed=True, facecolor=BG, edgecolor=color, linewidth=2.6,
+                          linestyle=linestyle, zorder=zorder))
+
+
+def star(ax, cx, cy, color=TEXT, r_out=0.22, r_in=0.09, zorder=4):
+    pts = []
+    for k in range(8):
+        ang = np.pi / 2 + k * np.pi / 4
+        r = r_out if k % 2 == 0 else r_in
+        pts.append((cx + r * np.cos(ang), cy + r * np.sin(ang)))
+    ax.add_patch(Polygon(pts, closed=True, facecolor=BG, edgecolor=color, linewidth=2.0, zorder=zorder))
+
+
+def _new_intuition_axes(ax, title):
+    ax.set_xlim(*INTUITION_XLIM)
+    ax.set_ylim(*INTUITION_YLIM)
+    ax.set_aspect("equal")
+    ax.axis("off")
+    ax.set_title(title, color=TEXT, fontsize=13.5, pad=10)
+
+
+def _draw_landmarks(ax):
+    star(ax, *L0)
+    ax.text(L0[0], L0[1] + 0.34, r"$L_0$", color=TEXT, fontsize=11, ha="center")
+    star(ax, *L1)
+    ax.text(L1[0], L1[1] - 0.4, r"$L_1$", color=TEXT, fontsize=11, ha="center")
+
+
+def slam_intuition_figure():
+    fig = plt.figure(figsize=(15.0, 5.3), facecolor=BG)
+
+    # Panel 1: observe the landmarks from the starting pose.
+    ax1 = fig.add_axes([0.02, 0.06, 0.30, 0.82])
+    _new_intuition_axes(ax1, "1. Observe landmarks")
+    robot_triangle(ax1, POSE0, TRUE_LINE)
+    _draw_landmarks(ax1)
+    for lm in (L0, L1):
+        ax1.plot([POSE0[0], lm[0]], [POSE0[1], lm[1]], color=SENSOR_RAY, linewidth=2.0,
+                  linestyle=(0, (4, 3)), zorder=2)
+
+    # Panel 2: drive using odometry alone, then re-observe -- nothing lines up.
+    ax2 = fig.add_axes([0.35, 0.06, 0.30, 0.82])
+    _new_intuition_axes(ax2, "2. Drive, then re-observe")
+    ax2.plot([POSE0[0], POSE1_ODOM[0]], [POSE0[1], POSE1_ODOM[1]], color=ODOM_LINE,
+              linewidth=1.8, linestyle=(0, (2, 2)), zorder=1)
+    robot_triangle(ax2, POSE1_ODOM, ODOM_LINE, linestyle="--")
+    robot_triangle(ax2, POSE1_TRUE, TRUE_LINE)
+    _draw_landmarks(ax2)
+    for lm in (L0, L1):
+        ax2.plot([POSE1_TRUE[0], lm[0]], [POSE1_TRUE[1], lm[1]], color=SENSOR_RAY, linewidth=2.0,
+                  linestyle=(0, (4, 3)), zorder=2)
+        ax2.plot([POSE1_ODOM[0], lm[0]], [POSE1_ODOM[1], lm[1]], color=EXPECTED_RAY, linewidth=1.6,
+                  linestyle=(0, (1, 2)), zorder=2)
+
+    # Panel 3: the correction sits between the odometry-only guess and the truth.
+    ax3 = fig.add_axes([0.68, 0.06, 0.30, 0.82])
+    _new_intuition_axes(ax3, "3. Correct using the mismatch")
+    robot_triangle(ax3, POSE1_ODOM, ODOM_LINE, linestyle="--")
+    robot_triangle(ax3, POSE1_CORRECTED, CORRECTED_LINE, linestyle=(0, (1, 1)))
+    robot_triangle(ax3, POSE1_TRUE, TRUE_LINE)
+    _draw_landmarks(ax3)
+
+    legend_items = [("true pose", TRUE_LINE, "-"), ("odometry-only estimate", ODOM_LINE, "--"),
+                    ("corrected (EKF) estimate", CORRECTED_LINE, (0, (1, 1)))]
+    ly = -1.7
+    for label, color, ls in legend_items:
+        ax3.plot([-1.25, -0.55], [ly, ly], color=color, linestyle=ls, linewidth=3.0, zorder=6)
+        ax3.text(-0.4, ly, label, color=TEXT, fontsize=9.5, va="center", zorder=6)
+        ly -= 0.36
+
+    fig.savefig(os.path.join(OUT_DIR, "slam_process_intuition.png"), dpi=130, facecolor=BG)
+    plt.close(fig)
 
 
 # ---------------------------------------------------------------------------
@@ -247,10 +353,11 @@ def main():
     assert np.isclose(mu_check, mu_post)
     assert np.isclose(var_check, var_post)
 
+    slam_intuition_figure()
     kalman_filter_fusion_figure()
     covariance_blocks_figure()
     predict_correct_figure()
-    print("Generated 3 figures in", OUT_DIR)
+    print("Generated 4 figures in", OUT_DIR)
 
 
 if __name__ == "__main__":

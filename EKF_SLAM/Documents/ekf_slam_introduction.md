@@ -1,6 +1,6 @@
 # Introduction to EKF SLAM
 
-This is the first of a series of documents about EKF SLAM. It assumes no prior experience with Kalman filters: it builds up from a single noisy number, to a full filter that estimates a robot's pose and a map of landmarks together. Its structure follows the classic tutorial [*SLAM for Dummies*](#further-reading) by Riisgaard and Blas, working from what SLAM is, through the overall process, to the EKF itself: its matrices, and the three steps it repeats every time the robot moves and looks around. Further documents will work through a complete 2D example by hand and walk through this repository's MATLAB implementation, the way the [GraphSLAM series](../../Graph_SLAM/Documents/graphslam_introduction.md) does for its own method.
+This is the first of a series of documents about EKF SLAM. It assumes no prior experience with Kalman filters: it builds up from a single noisy number, to a full filter that estimates a robot's pose and a map of landmarks together. Its structure follows the classic tutorial [*SLAM for Dummies*](#further-reading) by Riisgaard and Blas, working from what SLAM is, through the hardware and raw data involved, the overall process, landmarks and how the robot keeps track of which one is which, and finally the EKF itself: its matrices, and the three steps it repeats every time the robot moves and looks around. The one piece of that tutorial this document leaves out is the fine detail of *how* to extract a landmark from a raw sensor scan — what a landmark is, and that extraction has to happen somehow, is still covered, but the specific algorithms are sensor-specific and are better left to a future document tied to this repository's own simulation. Further documents will work through a complete 2D example by hand and walk through this repository's MATLAB implementation, the way the [GraphSLAM series](../../Graph_SLAM/Documents/graphslam_introduction.md) does for its own method.
 
 ## About SLAM
 
@@ -9,15 +9,38 @@ A robot that moves through an unknown place needs two things at once: a **map** 
 - To add an observation to the map, the robot must know where it was when it made it.
 - To work out where it is, the robot must compare what it sees against a map.
 
-**Simultaneous localization and mapping (SLAM)** solves both together. The robot has two kinds of information to work with: **odometry**, which measures how the robot moved but drifts over time, and **observations**, which measure where a landmark sits relative to the robot but are also noisy. Neither can be trusted exactly, and SLAM is the problem of combining them into the single most consistent estimate.
+**Simultaneous localization and mapping (SLAM)** solves both together. The name (and the acronym) comes from Hugh Durrant-Whyte and John J. Leonard, building on earlier work by Smith, Self, and Cheeseman on estimating uncertain spatial relationships; it was briefly called SMAL before being reordered for a better acronym. SLAM is usually broken down into a handful of smaller problems, each of which can be solved in more than one way:
 
-**EKF SLAM** is one way to solve this problem, built around the **extended Kalman filter (EKF)**. If you haven't met a Kalman filter before, the EKF section below builds one up from scratch, starting with a single noisy number and nothing else.
+- **Landmark extraction** — pulling distinctive, re-recognizable features out of raw sensor data.
+- **Data association** — deciding whether a newly extracted landmark is one seen before, or a brand new one.
+- **State estimation** — combining odometry and landmark observations into the best estimate of the robot's pose and the map.
+- **State update** and **landmark update** — folding a new piece of information into that estimate, one measurement at a time.
+
+This document (and this repository) focuses on **state estimation and update**, using the **extended Kalman filter (EKF)** to do it — hence **EKF SLAM**. SLAM is solvable in both two and three dimensions; this document, like the rest of this repository, only considers a robot moving in 2D. If you haven't met a Kalman filter before, the [EKF section](#the-ekf) below builds one up from scratch, starting with a single noisy number and nothing else.
+
+---
+
+## Sensing the World
+
+Before any of the SLAM machinery can run, the robot needs two streams of raw information: an estimate of how it has moved, and a measurement of what's around it.
+
+**Odometry** is the robot's own estimate of its motion, typically derived from how much its wheels have turned. It's available constantly and cheaply, but it's never exact — every reading carries a small error, and because each one builds on the last, those errors accumulate into **drift**: the longer the robot drives using odometry alone, the further its believed position wanders from where it actually is.
+
+**Range measurements** are what let the robot tie its drifting position estimate back to the fixed, unmoving world. A real system needs a physical sensor to produce them, and there are a few common choices, each with its own tradeoffs:
+
+- **Laser scanners** sweep a beam across a field of view and report a distance at each angle. They're precise and need little processing, but they're expensive, and they struggle with reflective or transparent surfaces like glass, and with anything underwater.
+- **Sonar** is far cheaper, and it's the natural choice underwater, but each reading covers a much wider cone than a laser beam does, making its measurements considerably less precise.
+- **Vision** (one or more cameras) captures far more information per reading than either of the above, but turning a picture into a precise distance measurement is more computationally demanding, and can struggle in poor or changing light.
+
+A laser scanner's raw output looks like a long list of numbers — one distance per angular step across its field of view, for example one reading every $0.5°$ across a $180°$ sweep. A reading the sensor couldn't resolve (looking at a surface that scatters or absorbs its beam, for instance) is reported as a special out-of-range value rather than silently dropped, so it can be filtered out before anything downstream mistakes it for a real measurement.
+
+Odometry and range readings also need to be matched up in time: a scan from one moment, paired with an odometry reading from a slightly different moment, quietly mixes two different poses together and compounds the drift problem above. A real system has to either query both at once or extrapolate one to match the other's timestamp. This repository's simulation sidesteps the entire hardware problem: [`getControlAndMeasurement.m`](../../common/getControlAndMeasurement.m) directly produces an already-synchronized noisy odometry reading and a noisy range-bearing observation at every simulated time step, which is the raw material the rest of this document works with.
 
 ---
 
 ## The SLAM Process
 
-Before looking at the EKF itself, it helps to see where it fits into the whole cycle the robot repeats, over and over, as it drives. At a high level:
+With a steady stream of odometry and range readings available, it helps to see the whole cycle the robot repeats, over and over, as it drives, before looking at any one piece of it in detail:
 
 ```mermaid
 flowchart TD
@@ -33,7 +56,48 @@ flowchart TD
 
 When the odometry changes because the robot moves, the uncertainty in the robot's position is updated first — this is **Step 1**, the predict step. Separately, landmarks are extracted from whatever the robot's sensor currently sees, and each extracted landmark is compared against the ones already in the map — this is **data association**, deciding which previously-seen landmark (if any) a new observation belongs to. A landmark that matches an existing one feeds into **Step 2**, correcting the robot's position and the map using that re-observation. A landmark that doesn't match anything feeds into **Step 3**, adding it to the map for the first time. All three steps update the same running estimate, and the cycle repeats indefinitely.
 
-Landmark extraction and data association are **front-end** problems: they depend entirely on the sensor being used, and a real implementation has to solve them with real, noisy data. This repository's simulation sidesteps most of that difficulty, since it simulates range-bearing measurements with *known* data association (the simulated sensor reports which real landmark it is looking at). This document, and the EKF itself, is the SLAM **back end** — the part that turns measurements, however they were produced and matched, into a consistent estimate. A future document will cover how this repository's simulation produces its measurements.
+It's worth seeing why this matters before diving into any matrices. Picture a robot that has just observed two landmarks from its starting pose:
+
+![The robot, drawn as a white triangle, sits at the origin with two gold dashed sensor rays reaching out to two star-shaped landmarks labeled L0 and L1.](images/slam_process_intuition.png)
+
+It then drives forward, steering by nothing but its own (noisy) odometry. If that odometry were perfect, its new believed pose would exactly match where it really ended up. It never is: the middle panel above shows the robot's odometry-only estimate (the dashed gray triangle) ending up in a visibly different place from its true pose (the solid white triangle) — and because the sensor can only ever measure from where the robot *actually* is, the landmark rays it would expect to see from its *believed* pose (dotted purple) don't line up with the rays it actually measures (dashed gold). That mismatch is exactly the signal the EKF needs: in the right panel, folding the re-observed landmarks back into the estimate pulls the corrected pose (dotted purple triangle) much closer to the true one than odometry alone ever could have managed.
+
+Landmark extraction and data association are **front-end** problems: they depend entirely on the sensor being used, and a real implementation has to solve them with real, noisy data — see the [Landmarks](#landmarks) and [Data Association](#data-association) sections below for what that involves, without the sensor-specific algorithms themselves. This repository's simulation sidesteps the hardest part of the front end, since it simulates range-bearing measurements with *known* data association (the simulated sensor reports which real landmark it is looking at). The EKF itself — the SLAM **back end** — is the part that turns measurements, however they were produced and matched, into a consistent estimate, and is this document's main focus.
+
+---
+
+## Landmarks
+
+A landmark is anything in the environment distinctive and stable enough for the robot to recognize again later. A useful way to picture why that matters is to imagine navigating a house blindfolded: you can't see where you are, but by reaching out and feeling a distinctive doorframe or corner, you can work out roughly where you must be standing. A robot's sensors play the same role as that groping hand — and just like a hand feeling around a room, not everything it touches makes an equally good landmark.
+
+A good landmark should be:
+
+- **Re-observable.** It should look recognizably the same from a variety of positions and angles, not just the one it was first seen from.
+- **Distinguishable.** It shouldn't be easily confused with other landmarks nearby — two identical, closely-spaced landmarks are a recipe for the kind of mix-up the [next section](#data-association) describes.
+- **Plentiful.** There should be enough landmarks around that the robot is rarely left with nothing nearby to re-observe.
+- **Stationary.** A landmark that can move — a person, for instance — is a poor reference point, because its position can no longer be trusted as a fixed anchor for the map.
+
+Indoor environments usually have plenty of candidates that fit this description: distinct corners, poles, furniture legs, and long straight wall segments are all common choices. *Extracting* a landmark means turning a raw sensor reading into one of these candidates — for a laser scanner, this typically means looking for a sudden jump in the range readings (suggesting something like a pole or a table leg sticking out in front of a wall) or fitting straight lines to flat stretches of readings (common in indoor environments full of flat walls) and treating a point on that line as the landmark. The details of how to do this well are specific to the sensor in use, and are left to a future document; this repository's simulation sidesteps extraction entirely, reporting a noisy range and bearing straight to a real, simulated landmark.
+
+---
+
+## Data Association
+
+Once a landmark has been extracted from a new sensor reading, the robot has to decide which landmark it actually is. This is harder than it sounds. Imagine, as a human, walking into a room, noticing a chair, leaving, and returning later to see a chair again — if there's only one chair, it's obviously the same one. If the room has two identical chairs standing close together, it suddenly isn't obvious at all: the best you can do is reason that the chair on the left must be the one you previously saw on the left.
+
+In practice, this kind of mismatch takes a few forms:
+
+- A landmark might not be re-observed every time step, simply because the robot can't currently see it.
+- A landmark might be extracted once and never seen again — a sign that the extraction was unreliable, not that a real landmark was found.
+- A landmark might be matched to the *wrong* existing landmark. This is the most damaging failure, since it feeds a confidently wrong correction straight into the robot's pose and map.
+
+A common strategy — the one this repository's simulation stands in for by assuming known data association — is **nearest-neighbor** association with a validation gate: a newly extracted landmark is compared against the landmarks already in the map, matched to whichever one is closest, and only accepted as a genuine match if it passes a statistical test. That test reuses two quantities already defined in the EKF below: the innovation $\mathbf{y}$ (how far the observation was from what was predicted) and the innovation covariance $S$ (how much disagreement is expected, given the current uncertainty). An observation is accepted as a re-observation of the matched landmark only if
+
+```math
+\mathbf{y}^{\mathsf{T}}S^{-1}\mathbf{y}\le\lambda
+```
+
+for some chosen threshold $\lambda$ — in effect, asking "is this disagreement small enough, relative to how uncertain we already are, to plausibly be the same landmark?" An observation that fails the gate is instead treated as a brand new landmark. A landmark is also usually required to pass this gate several times before the robot trusts it enough to use for correcting its own pose, which filters out landmarks that were only ever an extraction error to begin with.
 
 ---
 
@@ -124,7 +188,7 @@ where:
 
 - $f$ is the process model (how the state evolves given a control input $\mathbf{u}$), and $h$ is the measurement model (what a sensor reading should look like, given the state).
 - $R$ and $Q$ are the process noise and measurement noise covariances — the multi-variable equivalents of $\sigma_1^2$ and $\sigma_2^2$ from before.
-- $\mathbf{y}$, the difference between the actual and the predicted measurement, is called the **innovation** — the multi-variable equivalent of $\mu_2-\mu_1$.
+- $\mathbf{y}$, the difference between the actual and the predicted measurement, is called the **innovation** — the multi-variable equivalent of $\mu_2-\mu_1$. This is the same $\mathbf{y}$ (and $S$) the [data association](#data-association) validation gate above reuses.
 - $K$ again decides how much the innovation should move the state estimate, exactly like before, just expressed with matrices instead of a single ratio.
 
 For many real systems, $f$ and $h$ are **nonlinear** — a heading $\theta$ usually appears inside a $\sin$ or $\cos$, for instance. $F$ and $H$ above are the **Jacobians** of $f$ and $h$: matrices of partial derivatives that locally approximate the nonlinear functions with a linear one, evaluated at the current estimate. Using this local linear approximation instead of the exact nonlinear function is what makes this the **extended** Kalman filter.
@@ -154,6 +218,8 @@ $P$ is $(3+2N)\times(3+2N)$ — one row and one column for every entry of $\math
 - $P_{rl}$ and $P_{lr}=P_{rl}^{\mathsf{T}}$, each $3\times2N$, capture the correlation between the robot's pose and every landmark. This matters because every landmark's estimated position was computed from the robot's pose *at the time it was observed* — if that pose estimate later turns out to be off, the landmark's estimate should move too, and this block is what remembers that relationship.
 - $P_{ll}$, the remaining $2N\times2N$ block, holds each landmark's own variance along its diagonal 2×2 blocks, and the correlation *between pairs of landmarks* everywhere else. These cross-landmark terms start at zero — two landmarks that have never been seen from the same uncertain pose have no reason to be correlated yet — but they fill in over time, which turns out to be the key to why SLAM works better than mapping each landmark independently.
 
+Every entry of $P$ starts somewhere specific, too: the robot's own block $P_{rr}$ is usually initialized small (the robot knows roughly where it starts), while every landmark's block in $P_{ll}$ starts enormous, since nothing is known yet about a landmark that hasn't been observed — see [Step 3](#step-3-add-new-landmarks-to-the-state) for exactly how that resolves itself the first time a landmark is actually seen.
+
 ![A 9 by 9 grid representing the covariance matrix for a robot pose and three landmarks, labeled x, y, theta, L0x, L0y, L1x, L1y, L2x, L2y along both axes. The top-left 3 by 3 block is colored blue for the robot-robot block. The row and column band for the robot against every landmark is colored purple for the robot-landmark cross blocks. Along the landmark-landmark region, the 2 by 2 blocks on the diagonal for each individual landmark are colored gold, and every remaining off-diagonal 2 by 2 block between two different landmarks is colored a muted blue-gray, representing correlation between landmarks.](images/ekf_slam_covariance_blocks.png)
 
 #### The Kalman Gain: $K$
@@ -162,7 +228,17 @@ $K$ plays exactly the role it did for a single number: it decides how much to tr
 
 #### The Jacobian of the Measurement Model: $H$
 
-The measurement model $h$ predicts what range and bearing the robot should see to a landmark, given the current estimate of the robot's pose and that landmark's position. Its Jacobian $H$ says how that predicted range and bearing would change for a small change in any part of the state — and almost all of that change comes from just two places: the robot's own pose, and the one landmark currently being observed. Every other column of $H$, belonging to every other landmark, is zero.
+The measurement model $h$ predicts what range and bearing the robot should see to a landmark, given the current estimate of the robot's pose and that landmark's position:
+
+```math
+h(\mathbf{x})=
+\begin{bmatrix}
+\sqrt{(\lambda_x-x_r)^2+(\lambda_y-y_r)^2}\\
+\operatorname{atan2}(\lambda_y-y_r,\ \lambda_x-x_r)-\theta_r
+\end{bmatrix}
+```
+
+for a landmark at $(\lambda_x,\lambda_y)$. Its Jacobian $H$ says how that predicted range and bearing would change for a small change in any part of the state — and almost all of that change comes from just two places: the robot's own pose, and the one landmark currently being observed. Every other column of $H$, belonging to every other landmark, is zero.
 
 This repository's simulation builds $H$ in exactly this two-piece way. A small $2\times5$ Jacobian, `H_low`, holds the derivatives of range and bearing with respect to the robot pose and the single observed landmark's $(x,y)$:
 
@@ -193,7 +269,22 @@ for a robot commanded with linear velocity $v$ and heading $\theta$ over a time 
 
 #### The Process and Measurement Noise: $R$ and $Q$
 
-$R$ and $Q$ play the same role they did for a single number, just as covariance matrices instead of single variances. $R$ describes how much the robot's own motion is trusted — in the simulation, it's built from the commanded velocity noise and only ever touches the robot's $3\times3$ block, since nothing else is moving. $Q$ describes how much a single range-bearing measurement is trusted, and is a small, fixed $2\times2$ matrix, since every observation only ever reports two numbers regardless of how large the map has grown.
+$R$ and $Q$ play the same role they did for a single number, just as covariance matrices instead of single variances, and in the simulation both are built up from a smaller matrix of true sensor and actuator uncertainties, the same way $P$ is understood by its blocks.
+
+$R$ describes how much the robot's own motion is trusted, and only ever touches the robot's $3\times3$ block, since nothing else is moving. It's built by mapping the uncertainty in the *commanded* linear and angular velocity, $M=\operatorname{diag}(\sigma_v^2,\sigma_w^2)$, into pose space through a small Jacobian $V$ of its own:
+
+```math
+V=
+\begin{bmatrix}
+\cos\theta\,\Delta t & 0\\
+\sin\theta\,\Delta t & 0\\
+0 & \Delta t
+\end{bmatrix},
+\qquad
+R_x=VMV^{\mathsf{T}}.
+```
+
+$Q$ describes how much a single range-bearing measurement is trusted, and is a small, fixed $2\times2$ diagonal matrix of the sensor's own range and bearing variances, $Q=\operatorname{diag}(\sigma_r^2,\sigma_b^2)$, since every observation only ever reports two numbers regardless of how large the map has grown.
 
 ---
 
@@ -209,17 +300,17 @@ P_{rl}'=F_xP_{rl},
 P_{ll}'=P_{ll}.
 ```
 
-The robot block changes the most — it's transformed by $F_x$ on both sides and gains new process noise $R_x$. The cross-correlation blocks change too, but more gently, scaled by $F_x$ on one side only. The landmark-landmark block is completely untouched: landmarks don't move, so nothing new happens to how they relate to each other during a predict step. Only the state's first three entries and $P$'s robot-related rows and columns are touched at all — every landmark already in the map is left exactly as it was until it is re-observed.
+The robot block changes the most — it's transformed by $F_x$ on both sides and gains new process noise $R_x$. The cross-correlation blocks change too, but more gently, scaled by $F_x$ on one side only. The landmark-landmark block is completely untouched: landmarks don't move, so nothing new happens to how they relate to each other during a predict step. Only the state's first three entries and $P$'s robot-related rows and columns are touched at all — every landmark already in the map is left exactly as it was until it is re-observed. This is the step that, left running on its own with no corrections, produces exactly the kind of odometry-only drift shown in the middle panel of the [SLAM process](#the-slam-process) figure above.
 
 ### Step 2: Correct Using Re-Observed Landmarks
 
-When the robot observes a landmark it has already matched to one in the map, the measurement model $h$ predicts the range and bearing it should see, the innovation $\mathbf{y}=\mathbf{z}-h(\mathbf{x}')$ captures how wrong that prediction was, and the full correct step
+When the robot observes a landmark it has already matched to one in the map (via [data association](#data-association)), the measurement model $h$ predicts the range and bearing it should see, the innovation $\mathbf{y}=\mathbf{z}-h(\mathbf{x}')$ captures how wrong that prediction was, and the full correct step
 
 ```math
 S=HP'H^{\mathsf{T}}+Q,\qquad K=P'H^{\mathsf{T}}S^{-1},\qquad \mathbf{x}=\mathbf{x}'+K\mathbf{y},\qquad P=(I-KH)P'
 ```
 
-folds that information back in. As the section on $H$ explained, $H$ is only directly nonzero in the robot's columns and the one re-observed landmark's columns — but $K=P'H^{\mathsf{T}}S^{-1}$ multiplies through *every column* of $P'$, not just the ones $H$ reads from directly. Because the robot is already correlated with every landmark through $P_{rl}$, and the re-observed landmark may already be correlated with other landmarks through $P_{ll}$, the correction ripples outward through those correlations and can adjust the entire map — including landmarks the robot isn't even looking at right now.
+folds that information back in. As the section on $H$ explained, $H$ is only directly nonzero in the robot's columns and the one re-observed landmark's columns — but $K=P'H^{\mathsf{T}}S^{-1}$ multiplies through *every column* of $P'$, not just the ones $H$ reads from directly. Because the robot is already correlated with every landmark through $P_{rl}$, and the re-observed landmark may already be correlated with other landmarks through $P_{ll}$, the correction ripples outward through those correlations and can adjust the entire map — including landmarks the robot isn't even looking at right now. This is the step that produced the corrected pose in the right-hand panel of the [SLAM process](#the-slam-process) figure above.
 
 ![Two side-by-side 9 by 9 grids for the same state as before. The left grid, titled predict, highlights only the robot block in blue and the robot-landmark cross blocks in purple, leaving the landmark-landmark block a flat unchanged dark gray. The right grid, titled correct observing L1, highlights the robot block in blue and the L1 diagonal block in gold as the two directly observed blocks, while every remaining block of the matrix, including landmarks other than L1 and their correlations, is colored blue-gray to show it is still updated indirectly through correlation.](images/ekf_slam_predict_correct.png)
 
@@ -256,10 +347,10 @@ EKF SLAM's cost grows with the *size of the map*: $P$ is $(3+2N)^2$ entries, and
 
 ## Final Remarks
 
-This document covers a basic, complete EKF SLAM: enough to fold odometry and landmark observations into a single consistent estimate of a robot's pose and its map, the same way the simulation in [SIMULATION_EKFSLAM.m](../SIMULATION_EKFSLAM.m) does. There is more to the full problem that it doesn't touch:
+This document covers a basic, complete EKF SLAM: enough to go from raw odometry and range sensor data, through extracting and matching landmarks, to folding them into a single consistent estimate of a robot's pose and its map, the same way the simulation in [SIMULATION_EKFSLAM.m](../SIMULATION_EKFSLAM.m) does. A few things are still out of scope:
 
+- **The specific algorithms behind landmark extraction** — turning a raw laser scan into a list of candidate landmark positions — are sensor-specific, and were deliberately left out of this document (see [Landmarks](#landmarks)); this repository's simulation sidesteps the problem entirely by reporting ground-truth landmark observations directly.
 - **Loop closure** — recognizing that the robot has returned to an already-mapped place, and using that to correct drift built up along the way — isn't handled specially here. It falls out naturally if the revisited landmarks are re-observed and matched correctly, but nothing in this document adds the extra care that a real system needs to detect and trust a loop closure confidently. See [Loop Closure in GraphSLAM](../../Graph_SLAM/Documents/graphslam_loop_closure.md) for how the batch alternative handles it.
-- **Landmark extraction and data association** depend entirely on the sensor in use, and this document deferred them to future work, the way *SLAM for Dummies* devotes several of its own chapters to exactly this problem for a laser scanner.
 
 Future documents in this series will work through a full 2D example by hand — building $\mathbf{x}$, $P$, and the Jacobians $F$ and $H$ explicitly with real numbers — and then walk through how [SIMULATION_EKFSLAM.m](../SIMULATION_EKFSLAM.m) puts all of it into code.
 
