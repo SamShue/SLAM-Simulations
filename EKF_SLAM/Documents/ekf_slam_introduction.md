@@ -234,7 +234,7 @@ The measurement model $h$ predicts what range and bearing the robot should see t
 h(\mathbf{x})=
 \begin{bmatrix}
 \sqrt{(\lambda_x-x_r)^2+(\lambda_y-y_r)^2}\\
-\operatorname{atan2}(\lambda_y-y_r,\ \lambda_x-x_r)-\theta_r
+\text{atan2}(\lambda_y-y_r,\ \lambda_x-x_r)-\theta_r
 \end{bmatrix}
 ```
 
@@ -271,7 +271,7 @@ for a robot commanded with linear velocity $v$ and heading $\theta$ over a time 
 
 $R$ and $Q$ play the same role they did for a single number, just as covariance matrices instead of single variances, and in the simulation both are built up from a smaller matrix of true sensor and actuator uncertainties, the same way $P$ is understood by its blocks.
 
-$R$ describes how much the robot's own motion is trusted, and only ever touches the robot's $3\times3$ block, since nothing else is moving. It's built by mapping the uncertainty in the *commanded* linear and angular velocity, $M=\operatorname{diag}(\sigma_v^2,\sigma_w^2)$, into pose space through a small Jacobian $V$ of its own:
+$R$ describes how much the robot's own motion is trusted, and only ever touches the robot's $3\times3$ block, since nothing else is moving. It's built by mapping the uncertainty in the *commanded* linear and angular velocity, $M=\text{diag}(\sigma_v^2,\sigma_w^2)$, into pose space through a small Jacobian $V$ of its own:
 
 ```math
 V=
@@ -284,7 +284,7 @@ V=
 R_x=VMV^{\mathsf{T}}.
 ```
 
-$Q$ describes how much a single range-bearing measurement is trusted, and is a small, fixed $2\times2$ diagonal matrix of the sensor's own range and bearing variances, $Q=\operatorname{diag}(\sigma_r^2,\sigma_b^2)$, since every observation only ever reports two numbers regardless of how large the map has grown.
+$Q$ describes how much a single range-bearing measurement is trusted, and is a small, fixed $2\times2$ diagonal matrix of the sensor's own range and bearing variances, $Q=\text{diag}(\sigma_r^2,\sigma_b^2)$, since every observation only ever reports two numbers regardless of how large the map has grown.
 
 ---
 
